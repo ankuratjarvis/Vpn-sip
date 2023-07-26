@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/sipFragment">
+
+    <fragment
+        android:id="@+id/vpnFragment"
+        android:name="com.example.myapplication.VpnFragment"
+        android:label="fragment_vpn"
+        tools:layout="@layout/fragment_vpn" >
+
+    </fragment>
+    <fragment
+        android:id="@+id/sipFragment"
+        android:name="com.example.myapplication.SipFragment"
+        android:label="fragment_sip"
+        tools:layout="@layout/fragment_sip" >
+
+        <action
+            android:id="@+id/action_sipFragment_to_callFragment"
+            app:destination="@id/callFragment"
+            app:restoreState="true"
+            />
+    </fragment>
+    <fragment
+        android:id="@+id/callFragment"
+        android:name="com.example.myapplication.CallFragment"
+        android:label="fragment_call"
+        tools:layout="@layout/fragment_call" >
+
+
+    </fragment>
+</navigation>
