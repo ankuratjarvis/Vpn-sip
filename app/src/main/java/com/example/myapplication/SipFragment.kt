@@ -1,101 +1,95 @@
 package com.example.myapplication
 
+import android.app.Activity
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.net.VpnService
 import android.os.Bundle
+import android.os.RemoteException
 import android.text.method.ScrollingMovementMethod
 import android.util.Log
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
-import android.widget.EditText
-import android.widget.TextView
 import android.widget.Toast
-import androidx.lifecycle.Observer
-import androidx.navigation.NavOptions
-import androidx.navigation.findNavController
-import androidx.navigation.fragment.findNavController
+import androidx.appcompat.app.AlertDialog
+import androidx.fragment.app.Fragment
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import com.example.myapplication.common.Constants.SIP_DOMAIN
+import com.example.myapplication.common.Constants.SIP_PASSWORD
+import com.example.myapplication.common.Constants.SIP_USERNAME
+import com.example.myapplication.common.Constants.VPN_PASSWORD
+import com.example.myapplication.common.Constants.VPN_USERNAME
+import com.example.myapplication.common.DisplayLogs
+import com.example.myapplication.common.netCheck
+import com.example.myapplication.databinding.FragmentSipBinding
+import com.example.myapplication.model.Server
+import com.example.myapplication.model.UserCredentials
 import com.example.myapplication.viewmodels.SipViewModel
-import com.mizuvoip.jvoip.SIPNotification
-import com.mizuvoip.jvoip.SIPNotificationListener
-import com.mizuvoip.jvoip.SipStack
-import java.io.Serializable
+import de.blinkt.openvpn.OpenVpnApi
+import de.blinkt.openvpn.core.OpenVPNService
+import de.blinkt.openvpn.core.OpenVPNThread
+import de.blinkt.openvpn.core.VpnStatus
+import java.io.BufferedReader
+import java.io.IOException
+import java.io.InputStreamReader
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
 
-/**
- * A simple [Fragment] subclass.
- * Use the [SipFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
 class SipFragment : Fragment() {
-    // TODO: Rename and change types of parameters
     private val TAG = SipFragment::class.java.simpleName
-    private var param1: String? = null
-    private var param2: String? = null
 
-    lateinit var numberTextField: EditText
-    lateinit var usernameTextField: EditText
-    lateinit var domainTextField: EditText
-    lateinit var passwordTextField: EditText
-    lateinit var startSipBtn: Button
-    lateinit var stopSipBtn: Button
-    lateinit var callBtn: Button
-    lateinit var logView: TextView
-    lateinit var viewModel:SipViewModel
-    var isFirstTime = true
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        arguments?.let {
-            param1 = it.getString(ARG_PARAM1)
-            param2 = it.getString(ARG_PARAM2)
-        }
-    }
+
+    var vpnStart = false
+    lateinit var server: Server
+    lateinit var binding: FragmentSipBinding
+    lateinit var viewModel: SipViewModel
+
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         // Inflate the layout for this fragment
         Log.d(TAG, "Fragment---> $TAG Created")
-
-        val v = inflater.inflate(R.layout.fragment_sip, container, false)
-        viewModel =(activity as MainActivity).viewModel
-        viewModel.testFunction()
-        initViews(v)
-
-        return v
+        binding = FragmentSipBinding.inflate(inflater, container, false)
+        return binding.root
     }
 
-    private fun initViews(v: View) {
-        numberTextField = v.findViewById(R.id.numberET)
-        usernameTextField = v.findViewById(R.id.username)
-        domainTextField = v.findViewById(R.id.domain)
-        passwordTextField = v.findViewById(R.id.password)
 
-        usernameTextField.setText("0603441510466")
-        domainTextField.setText("sip-user.ttsl.tel")
-        passwordTextField.setText("UFDp7Oh^k8")
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        viewModel = (activity as MainActivity).viewModel
+        server = Server("bangalore.ovpn", VPN_USERNAME, VPN_PASSWORD)
+        initViews()
+        // Checking is vpn already running or not
+        isServiceRunning()
 
-        startSipBtn = v.findViewById(R.id.startSipStack)
-        stopSipBtn = v.findViewById(R.id.stopSIP)
-        callBtn = v.findViewById(R.id.callBtn)
-        logView = v.findViewById(R.id.logTextView)
-        callBtn.isEnabled = false
-        stopSipBtn.isEnabled = false
-        numberTextField.isEnabled = false
-        logView.movementMethod = ScrollingMovementMethod()
+        VpnStatus.initLogCache(activity!!.cacheDir)
+
+    }
+
+    private fun initViews() {
+
+
+        binding.username.setText(SIP_USERNAME)
+        binding.domain.setText(SIP_DOMAIN)
+        binding.password.setText(SIP_PASSWORD)
+
+
+        binding.callBtn.isEnabled = false
+        binding.stopSIP.isEnabled = false
+        binding.numberET.isEnabled = false
+        binding.logTextView.movementMethod = ScrollingMovementMethod()
 
         initListeners()
     }
 
     private fun initListeners() {
-        startSipBtn.setOnClickListener {
-            if (usernameTextField.text.isNotEmpty() && domainTextField.text.isNotEmpty() && passwordTextField.text.isNotEmpty()) {
+        binding.startSipStack.setOnClickListener {
+            if (binding.username.text.isNotEmpty() && binding.domain.text.isNotEmpty() && binding.password.text.isNotEmpty()) {
                 startSip()
                 showToast("Starting SIP Stack")
             } else {
@@ -103,27 +97,27 @@ class SipFragment : Fragment() {
             }
         }
 
-        stopSipBtn.setOnClickListener {
+        binding.stopSIP.setOnClickListener {
             viewModel.stopSip()
-            domainTextField.isEnabled = true
-            usernameTextField.isEnabled = true
-            passwordTextField.isEnabled = true
+            binding.domain.isEnabled = true
+            binding.username.isEnabled = true
+            binding.password.isEnabled = true
 
-            numberTextField.setText("")
-            numberTextField.isEnabled = false
+            binding.numberET.setText("")
+            binding.numberET.isEnabled = false
 
-            stopSipBtn.isEnabled = false
-            startSipBtn.isEnabled = true
-            callBtn.isEnabled = false
+            binding.stopSIP.isEnabled = false
+            binding.startSipStack.isEnabled = true
+            binding.callBtn.isEnabled = false
 
         }
 
-        callBtn.setOnClickListener {
-            if (numberTextField.text.isNotEmpty() && numberTextField.text.length == 10) {
-                showToast("calling number ${numberTextField.text}")
-                viewModel.makeCall(numberTextField.text.toString().trim())
-               val transaction =  requireActivity().supportFragmentManager.beginTransaction()
-                transaction.add(R.id.fragmentContainerView,CallFragment(),"CallFragment")
+        binding.callBtn.setOnClickListener {
+            if (binding.numberET.text.isNotEmpty() && binding.numberET.text.length == 10) {
+                showToast("calling number ${binding.numberET.text}")
+                viewModel.makeCall(binding.numberET.text.toString().trim())
+                val transaction = requireActivity().supportFragmentManager.beginTransaction()
+                transaction.add(R.id.fragmentContainerView, CallFragment(), "CallFragment")
                 transaction.addToBackStack(null)
                 transaction.commit()
 
@@ -136,52 +130,262 @@ class SipFragment : Fragment() {
         }
 
         viewModel.status.observe(viewLifecycleOwner) {
-            logView.DisplayLogs(it)
+            binding.logTextView.DisplayLogs(it)
         }
-
+        binding.vpnBtn.setOnClickListener {
+            if (vpnStart) {
+                confirmDisconnect()
+            } else {
+                prepareVpn()
+            }
+        }
 
     }
 
+    private fun confirmDisconnect() {
+        val builder = AlertDialog.Builder(
+            activity!!
+        )
+        builder.setMessage(activity!!.getString(R.string.connection_close_confirm))
+        builder.setPositiveButton(
+            activity!!.getString(R.string.yes)
+        ) { dialog, id -> stopVpn() }
+        builder.setNegativeButton(
+            activity!!.getString(R.string.no)
+        ) { dialog, id ->
+            // User cancelled the dialog
+        }
+
+        // Create the AlertDialog
+        val dialog = builder.create()
+        dialog.show()
+    }
+
+    private fun prepareVpn() {
+        if (!vpnStart) {
+            if (getInternetStatus()) {
+
+                // Checking permission for network monitor
+                val intent = VpnService.prepare(requireContext())
+                if (intent != null) {
+
+                    startActivityForResult(intent, 1)
+                } else {
+                    Log.d(TAG,"Starting VPN--->")
+
+                    startVpn()
+                } //have already permission
+
+                // Update confection status
+                status("connecting")
+            } else {
+
+                // No internet connection available
+                showToast("you have no internet connection !!")
+            }
+        } else if (stopVpn()) {
+
+            // VPN is stopped, show a Toast message.
+            showToast("Disconnect Successfully")
+        }
+    }
+
+    private fun getInternetStatus(): Boolean {
+        return netCheck(requireActivity())
+    }
+
+    private fun isServiceRunning() {
+        setStatus(OpenVPNService.getStatus())
+    }
+
+    private fun startVpn() {
+        try {
+            // .ovpn file
+            val conf = activity!!.assets.open(server.ovpn)
+            Log.d("Sip Fragment", "File name----> ${server.ovpn}")
+            val isr = InputStreamReader(conf)
+            val br = BufferedReader(isr)
+            var config = ""
+            var line: String?
+            while (true) {
+                line = br.readLine()
+                if (line == null) break
+                config += """
+                $line
+                
+                """.trimIndent()
+
+            }
+            br.readLine()
+            OpenVpnApi.startVpn(
+                requireContext(),
+                config,
+                "India",
+                server.username,
+                server.password
+            )
+
+
+            // Update log
+//           binding.logTV.setText("Connecting...")
+            vpnStart = true
+        } catch (e: IOException) {
+           Log.d(TAG,"Exception---> ${e.printStackTrace()}")
+        } catch (e: RemoteException) {
+           Log.d(TAG, "Exception---> ${e.printStackTrace()}")
+        }
+    }
+
+    private fun stopVpn(): Boolean {
+        try {
+            OpenVPNThread.stop()
+            status("connect")
+            vpnStart = false
+            return true
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return false
+    }
+
+    fun setStatus(connectionState: String?) {
+        Log.d(TAG,"Connection State--->$connectionState")
+
+        if (connectionState != null) when (connectionState) {
+
+                "DISCONNECTED" -> {
+                status("connect")
+                vpnStart = false
+                OpenVPNService.setDefaultStatus()
+                binding.logTV.text = ""
+            }
+
+            "CONNECTED" -> {
+                vpnStart = true // it will use after restart this activity
+                status("connected")
+                binding.logTV.text = ""
+            }
+
+            "WAIT" -> binding.logTV.text = "Connection Status waiting for server connection!!"
+            "AUTH" -> binding.logTV.text = "Connection Status server authenticating!!"
+            "RECONNECTING" -> {
+                status("connecting")
+                binding.logTV.text = "Connection Status Reconnecting..."
+            }
+
+            "NONETWORK" -> binding.logTV.text = "Connection Status No network connection"
+        }
+    }
+
     private fun startSip() {
-        val userCred = UserCredentials(usernameTextField.text.toString().trim(),domainTextField.text.toString().trim(),passwordTextField.text.toString().trim())
-        viewModel.startSipStack(requireContext(),userCred)
+        val userCred = UserCredentials(
+            binding.username.text.toString().trim(),
+            binding.domain.text.toString().trim(),
+            binding.password.text.toString().trim()
+        )
+        viewModel.startSipStack(requireContext(), userCred)
 
 
 
-        domainTextField.isEnabled = false
-        usernameTextField.isEnabled = false
-        passwordTextField.isEnabled = false
+        binding.domain.isEnabled = false
+        binding.username.isEnabled = false
+        binding.password.isEnabled = false
 
-        numberTextField.isEnabled = true
-        stopSipBtn.isEnabled = true
-        startSipBtn.isEnabled = false
-        callBtn.isEnabled = true
+        binding.numberET.isEnabled = true
+        binding.stopSIP.isEnabled = true
+        binding.startSipStack.isEnabled = false
+        binding.callBtn.isEnabled = true
     }
 
     private fun showToast(msg: String) {
         Toast.makeText(requireContext(), msg, Toast.LENGTH_LONG).show()
     }
 
-    companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment SipFragment.
-         */
-        // TODO: Rename and change types and number of parameters
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            SipFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
-                }
+    private fun status(status: String) {
+        when (status) {
+            "connect" -> {
+                binding.vpnBtn.text = context!!.getString(R.string.connect)
             }
+            "connecting" -> {
+                binding.vpnBtn.text = context!!.getString(R.string.connecting)
+            }
+            "connected" -> {
+                binding.vpnBtn.text = context!!.getString(R.string.disconnect)
+            }
+            "tryDifferentServer" -> {
+                binding.vpnBtn.text = context!!.getString(R.string.try_different_server)
+
+            }
+            "loading" -> {
+                binding.vpnBtn.text = context!!.getString(R.string.loading_server)
+            }
+            "invalidDevice" -> {
+                binding.vpnBtn.text = context!!.getString(R.string.invalid_device)
+            }
+            "authenticationCheck" -> {
+                binding.vpnBtn.text =context!!.getString(R.string.authentication_checking)
+            }
+        }
     }
 
+    private var broadcastReceiver: BroadcastReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            try {
+                setStatus(intent.getStringExtra("state"))
+            } catch (e: java.lang.Exception) {
+                e.printStackTrace()
+            }
+            try {
+                var duration = intent.getStringExtra("duration")
+                var lastPacketReceive = intent.getStringExtra("lastPacketReceive")
+                var byteIn = intent.getStringExtra("byteIn")
+                var byteOut = intent.getStringExtra("byteOut")
+                if (duration == null) duration = "00:00:00"
+                if (lastPacketReceive == null) lastPacketReceive = "0"
+                if (byteIn == null) byteIn = " "
+                if (byteOut == null) byteOut = " "
+                updateConnectionStatus(duration, lastPacketReceive, byteIn, byteOut)
+            } catch (e: java.lang.Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    fun updateConnectionStatus(
+        duration: String,
+        lastPacketReceive: String,
+        byteIn: String,
+        byteOut: String
+    ) {
+        binding.durationTv.text = "Duration: $duration"
+        binding.lastPacketReceiveTv.text = "Packet Received: $lastPacketReceive second ago"
+        binding.byteInTv.text = "Bytes In: $byteIn"
+        binding.byteOutTv.text = "Bytes Out: $byteOut"
+    }
+
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (resultCode == Activity.RESULT_OK) {
+
+            //Permission granted, start the VPN
+            startVpn()
+        } else {
+            showToast("Permission Deny !! ")
+        }
+    }
+
+    override fun onResume() {
+        LocalBroadcastManager.getInstance(activity!!)
+            .registerReceiver(broadcastReceiver, IntentFilter("connectionState"))
+
+        super.onResume()
+    }
+
+    override fun onPause() {
+        LocalBroadcastManager.getInstance(activity!!).unregisterReceiver(broadcastReceiver)
+        super.onPause()
+    }
 
 
 }

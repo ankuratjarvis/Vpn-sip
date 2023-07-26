@@ -1,13 +1,11 @@
 package com.example.myapplication.viewmodels
 
-import android.app.Application
 import android.content.Context
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import com.example.myapplication.DisplayLogs
-import com.example.myapplication.UserCredentials
+import com.example.myapplication.model.UserCredentials
 import com.mizuvoip.jvoip.SIPNotification
 import com.mizuvoip.jvoip.SIPNotificationListener
 import com.mizuvoip.jvoip.SipStack
@@ -21,6 +19,10 @@ class SipViewModel: ViewModel() {
 
     private val _mute = MutableLiveData<Boolean>(false)
     val isMute :LiveData<Boolean> get()=_mute
+
+
+
+
     fun testFunction(){
         Log.d("SipViewModel","chj jdhjjhjhdjshjjsjshjdshj")
     }
@@ -57,6 +59,10 @@ class SipViewModel: ViewModel() {
     fun makeCall(number:String){
         sipStack.Call(-1,number)
     }
+
+
+
+
     private val listener = object : SIPNotificationListener() {
         override fun onAll(e: SIPNotification?) {
             _status.postValue(

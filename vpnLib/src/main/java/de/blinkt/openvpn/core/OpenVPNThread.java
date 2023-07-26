@@ -56,12 +56,11 @@ public class OpenVPNThread implements Runnable {
     }
 
     public void stopProcess() {
-        mProcess.destroy();
+            mProcess.destroy();
     }
 
-    void setReplaceConnection()
-    {
-        mNoProcessExitStatus=true;
+    void setReplaceConnection() {
+        mNoProcessExitStatus = true;
     }
 
     @Override
@@ -124,7 +123,7 @@ public class OpenVPNThread implements Runnable {
         }
     }
 
-    public static boolean stop(){
+    public static boolean stop() {
         mService.openvpnStopped();
         mProcess.destroy();
         return true;
@@ -187,7 +186,7 @@ public class OpenVPNThread implements Runnable {
                         logerror = 1;
 
                     VpnStatus.logMessageOpenVPN(logStatus, logLevel, msg);
-                    if (logerror==1)
+                    if (logerror == 1)
                         VpnStatus.logError("OpenSSL reported a certificate with a weak hash, please the in app FAQ about weak hashes");
 
                 } else {
@@ -222,3 +221,7 @@ public class OpenVPNThread implements Runnable {
         return lbpath;
     }
 }
+/**
+ * "/data/app/~~kmdjyMv54XlpOe9IMKJy1Q==/com.lazycoder.cakevpn-fwwndMUFT6GJoG1Wd6iigg==/lib/arm64:/data/app/~~kmdjyMv54XlpOe9IMKJy1Q==/com.lazycoder.cakevpn-fwwndMUFT6GJoG1Wd6iigg==/lib/arm64/libovpnexec.so"
+ *         "/data/app/~~4U2r4hJ09QDGhE7D-jxzpA==/com.example.myapplication-Z73Fudc91icyNaCJ-Nxnyg==/lib/arm64:/data/app/~~4U2r4hJ09QDGhE7D-jxzpA==/com.example.myapplication-Z73Fudc91icyNaCJ-Nxnyg==/lib/arm64/libovpnexec.so"
+ */

@@ -1,4 +1,4 @@
-package com.example.myapplication
+package com.example.myapplication.common
 
 object Constants {
     const val SIP_USERNAME = "0603441510466"

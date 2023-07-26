@@ -34,32 +34,17 @@ import java.util.TimeZone
 
 
 class MainActivity : AppCompatActivity() {
-    lateinit var logView: TextView
-    lateinit var sipStack: SipStack
     val TAG = MainActivity::class.java.simpleName
-    private var sipProfile: SipProfile? = null
-    var sipManager: SipManager? = null
-    val username = "0603441510466"
-    val domain = "sip-user.ttsl.tel"
-    val pass = "UFDp7Oh^k8"
-    val number = "9815403116"
-    val viewModel: SipViewModel by viewModels()
-    lateinit var navController: NavController
 
-    //    lateinit var binding:ActivityMainBinding
-    lateinit var vpnBtn: Button
-    lateinit var btn: Button
-    lateinit var stopBtn: Button
-    lateinit var callET: EditText
-    lateinit var startSipStack: Button
-    lateinit var clearLog: ImageButton
+    val viewModel: SipViewModel by viewModels()
+
+
     lateinit var fragmentTransaction: FragmentTransaction
     lateinit var sipFragment: SipFragment
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-//        initViews()
         sipFragment = SipFragment()
         fragmentTransaction = supportFragmentManager.beginTransaction().apply {
             replace(R.id.fragmentContainerView, sipFragment).addToBackStack("sip")
@@ -69,105 +54,15 @@ class MainActivity : AppCompatActivity() {
         checkPermissions()
 
 
-        /*  sipStack = SipStack()
-
-
-          sipStack.Init(this)*/
-
-        //subscribe to notification events
-//        val listener = MyNotificationListener()
-//        sipStack.SetNotificationListener(listener)
-
-        /*   sipStack.SetParameter("loglevel", "5")
-           sipStack.SetParameter("serveraddress", domain)
-           sipStack.SetParameter("username", username)
-           sipStack.SetParameter("password", pass)
-   */
-
-
     }
 
-    private fun initViews() {
-        vpnBtn = findViewById(R.id.connectVpn)
-        btn = findViewById(R.id.callBtn)
-        stopBtn = findViewById(R.id.stopBtn)
-        startSipStack = findViewById(R.id.startSipStack)
-        callET = findViewById(R.id.calltoET)
-        logView = findViewById(R.id.logTextView)
-        clearLog = findViewById(R.id.clearLog)
-        logView.movementMethod = ScrollingMovementMethod()
-        logView.DisplayLogs("hello hello how you doing")
 
 
-//        navController.navigate(R.id.vpnFragment)
-
-//        setListeners()
-
-    }
-
-    private fun setListeners() {
-        vpnBtn.setOnClickListener {
-
-        }
-        startSipStack.setOnClickListener {
-            startSipStack()
-
-        }
-        btn.setOnClickListener {
-
-            if (callET.text.isNotEmpty() && callET.text.length == 10) {
-                val num = callET.text.toString().trim()
-                sipStack.Call(-1, num)
-                logView.DisplayLogs("Calling initiated to $num ")
-            } else {
-                logView.DisplayLogs("Number required ")
-
-            }
-
-
-        }
-        stopBtn.setOnClickListener {
-            sipStack.Hangup()
-            logView.DisplayLogs("Call hangup ")
-
-
-        }
-        clearLog.setOnClickListener {
-            logView.text = ""
-        }
-        /* bottomNav.setOnItemSelectedListener {
-             when (it.itemId) {
-                 R.id.vpnFragment -> navController.navigate(R.id.vpnFragment)
-                 R.id.sipFragment -> navController.navigate(R.id.sipFragment)
-                 R.id.callFragment -> navController.navigate(R.id.callFragment)
-                 else -> navController.navigate(R.id.vpnFragment)
-
-             }
-             return@setOnItemSelectedListener true
-
-         }*/
-
-    }
-
-    fun startSipStack() {
-        try {
-            logView.DisplayLogs("Start on click")
-
-
-            sipStack.Start()
-
-            logView.DisplayLogs("SIPStack Started")
-        } catch (e: Exception) {
-            logView.DisplayLogs("Error Creating Stack: Reason-->${e.message}")
-        }
-
-    }
 
 
     fun checkPermissions() {
         if (Build.VERSION.SDK_INT >= 23 && this.checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             //we need RECORD_AUDIO permission before to make/receive any call
-            logView.DisplayLogs("Microphone permission required")
             ActivityCompat.requestPermissions(
                 this@MainActivity,
                 arrayOf(Manifest.permission.RECORD_AUDIO),

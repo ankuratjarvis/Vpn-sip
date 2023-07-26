@@ -5,4 +5,14 @@
     <string name="vpn">vpn</string>
     <string name="sip_str">sip\n</string>
     <string name="call_str">call</string>
+    <string name="connection_close_confirm">Would you like to cancel the current VPN Connection?</string>
+    <string name="yes">yes\n</string>
+    <string name="no">no</string>
+    <string name="connect">Connect Vpn</string>
+    <string name="connecting">Connecting</string>
+    <string name="disconnect">Disconnect</string>
+    <string name="try_different_server">Try Different\nServer</string>
+    <string name="loading_server">Loading Server..</string>
+    <string name="invalid_device">Invalid Device</string>
+    <string name="authentication_checking">Authentication \n Checking...</string>
 </resources>
