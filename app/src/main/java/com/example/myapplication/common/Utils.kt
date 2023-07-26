@@ -1,5 +1,7 @@
-package com.example.myapplication
+package com.example.myapplication.common
 
+import android.content.Context
+import android.net.ConnectivityManager
 import android.util.Log
 import android.widget.TextView
 import java.text.SimpleDateFormat
@@ -24,4 +26,11 @@ fun TextView.DisplayLogs(logmsg: String) {
         Log.e(logmsg::class.java.simpleName, "ERROR, DisplayLogs", e)
 
     }
+
+}
+fun netCheck(context: Context): Boolean {
+    val cm =
+        context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+    val nInfo = cm.activeNetworkInfo
+    return nInfo != null && nInfo.isConnectedOrConnecting
 }
