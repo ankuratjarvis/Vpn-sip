@@ -41,9 +41,7 @@ class CallFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         // Inflate the layout for this fragment
-        requireActivity().window.decorView.apply {
-            systemUiVisibility = View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-        }
+
         Log.d(TAG, "Fragment---> $TAG Created")
         val v = inflater.inflate(R.layout.fragment_call, container, false)
         viewModel = (activity as MainActivity).viewModel
