@@ -28,6 +28,7 @@ import com.example.myapplication.databinding.FragmentSipBinding
 import com.example.myapplication.model.Server
 import com.example.myapplication.model.UserCredentials
 import com.example.myapplication.viewmodels.SipViewModel
+import com.mizuvoip.jvoip.SIPNotification
 import de.blinkt.openvpn.OpenVpnApi
 import de.blinkt.openvpn.core.OpenVPNService
 import de.blinkt.openvpn.core.OpenVPNThread
@@ -41,7 +42,6 @@ class SipFragment : Fragment() {
     private val TAG = SipFragment::class.java.simpleName
 
 
-
     var vpnStart = false
     lateinit var server: Server
     lateinit var binding: FragmentSipBinding
@@ -49,8 +49,7 @@ class SipFragment : Fragment() {
 
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
+        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
         // Inflate the layout for this fragment
         Log.d(TAG, "Fragment---> $TAG Created")
@@ -98,18 +97,7 @@ class SipFragment : Fragment() {
         }
 
         binding.stopSIP.setOnClickListener {
-            viewModel.stopSip()
-            binding.domain.isEnabled = true
-            binding.username.isEnabled = true
-            binding.password.isEnabled = true
-
-            binding.numberET.setText("")
-            binding.numberET.isEnabled = false
-
-            binding.stopSIP.isEnabled = false
-            binding.startSipStack.isEnabled = true
-            binding.callBtn.isEnabled = false
-
+            stopSip()
         }
 
         binding.callBtn.setOnClickListener {
@@ -128,8 +116,18 @@ class SipFragment : Fragment() {
             }
 
         }
+        viewModel.notificationStatus.observe(viewLifecycleOwner) {
+            if (it.status == SIPNotification.Status.STATUS_CALL_RINGING && it.endpointType == SIPNotification.Status.DIRECTION_IN) {
+                Log.d("SipFragment", "Incoming call ringing  from ${it.peerdisplayname}")
+                viewModel.acceptCall(it.getLine())
+            } else if (it.status == SIPNotification.Status.STATUS_CALL_CONNECT && it.endpointType == SIPNotification.Status.DIRECTION_IN) {
+                Log.d("SipFragment", "Incoming call Connected  from ${it.peerdisplayname}")
+
+            }
+        }
 
         viewModel.status.observe(viewLifecycleOwner) {
+
             binding.logTextView.DisplayLogs(it)
         }
         binding.vpnBtn.setOnClickListener {
@@ -171,7 +169,7 @@ class SipFragment : Fragment() {
 
                     startActivityForResult(intent, 1)
                 } else {
-                    Log.d(TAG,"Starting VPN--->")
+                    Log.d(TAG, "Starting VPN--->")
 
                     startVpn()
                 } //have already permission
@@ -218,11 +216,7 @@ class SipFragment : Fragment() {
             }
             br.readLine()
             OpenVpnApi.startVpn(
-                requireContext(),
-                config,
-                "India",
-                server.username,
-                server.password
+                requireContext(), config, "India", server.username, server.password
             )
 
 
@@ -230,14 +224,30 @@ class SipFragment : Fragment() {
 //           binding.logTV.setText("Connecting...")
             vpnStart = true
         } catch (e: IOException) {
-           Log.d(TAG,"Exception---> ${e.printStackTrace()}")
+            Log.d(TAG, "Exception---> ${e.printStackTrace()}")
         } catch (e: RemoteException) {
-           Log.d(TAG, "Exception---> ${e.printStackTrace()}")
+            Log.d(TAG, "Exception---> ${e.printStackTrace()}")
         }
+    }
+
+    private fun stopSip() {
+        viewModel.stopSip()
+        binding.domain.isEnabled = true
+        binding.username.isEnabled = true
+        binding.password.isEnabled = true
+
+        binding.numberET.setText("")
+        binding.numberET.isEnabled = false
+
+        binding.stopSIP.isEnabled = false
+        binding.startSipStack.isEnabled = true
+        binding.callBtn.isEnabled = false
+
     }
 
     private fun stopVpn(): Boolean {
         try {
+            stopSip()
             OpenVPNThread.stop()
             status("connect")
             vpnStart = false
@@ -249,11 +259,10 @@ class SipFragment : Fragment() {
     }
 
     fun setStatus(connectionState: String?) {
-        Log.d(TAG,"Connection State--->$connectionState")
 
         if (connectionState != null) when (connectionState) {
 
-                "DISCONNECTED" -> {
+            "DISCONNECTED" -> {
                 status("connect")
                 vpnStart = false
                 OpenVPNService.setDefaultStatus()
@@ -306,24 +315,30 @@ class SipFragment : Fragment() {
             "connect" -> {
                 binding.vpnBtn.text = context!!.getString(R.string.connect)
             }
+
             "connecting" -> {
                 binding.vpnBtn.text = context!!.getString(R.string.connecting)
             }
+
             "connected" -> {
                 binding.vpnBtn.text = context!!.getString(R.string.disconnect)
             }
+
             "tryDifferentServer" -> {
                 binding.vpnBtn.text = context!!.getString(R.string.try_different_server)
 
             }
+
             "loading" -> {
                 binding.vpnBtn.text = context!!.getString(R.string.loading_server)
             }
+
             "invalidDevice" -> {
                 binding.vpnBtn.text = context!!.getString(R.string.invalid_device)
             }
+
             "authenticationCheck" -> {
-                binding.vpnBtn.text =context!!.getString(R.string.authentication_checking)
+                binding.vpnBtn.text = context!!.getString(R.string.authentication_checking)
             }
         }
     }
@@ -352,10 +367,7 @@ class SipFragment : Fragment() {
     }
 
     fun updateConnectionStatus(
-        duration: String,
-        lastPacketReceive: String,
-        byteIn: String,
-        byteOut: String
+        duration: String, lastPacketReceive: String, byteIn: String, byteOut: String
     ) {
         binding.durationTv.text = "Duration: $duration"
         binding.lastPacketReceiveTv.text = "Packet Received: $lastPacketReceive second ago"
@@ -387,5 +399,8 @@ class SipFragment : Fragment() {
         super.onPause()
     }
 
-
+    override fun onDestroy() {
+        super.onDestroy()
+        stopVpn()
+    }
 }

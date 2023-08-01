@@ -21,7 +21,8 @@ class SipViewModel: ViewModel() {
     val isMute :LiveData<Boolean> get()=_mute
 
 
-
+    val _notificationStatus = MutableLiveData<SIPNotification.Status>()
+    val notificationStatus:LiveData<SIPNotification.Status> get() = _notificationStatus
 
     fun testFunction(){
         Log.d("SipViewModel","chj jdhjjhjhdjshjjsjshjdshj")
@@ -60,7 +61,10 @@ class SipViewModel: ViewModel() {
         sipStack.Call(-1,number)
     }
 
-
+    fun acceptCall(line:Int){
+        Log.d("SipFragment","call accepted")
+        sipStack.Accept(line)
+    }
 
 
     private val listener = object : SIPNotificationListener() {
@@ -92,12 +96,15 @@ class SipViewModel: ViewModel() {
 
         }
 
-        override fun onStatus(e: SIPNotification.Status?) {
+        override fun onStatus(e: SIPNotification.Status) {
+
             if (e?.getLine() == -1) return  //we are ignoring the global state here (but you might check only the global state instead or look for the particular lines separately if you must handle multiple simultaneous calls)
 
             //log call state
             if (e?.getStatus()!! >= SIPNotification.Status.STATUS_CALL_SETUP && e?.getStatus()!! <= SIPNotification.Status.STATUS_CALL_FINISHED) {
                 _status.postValue("Call state is: " + e.statusText)
+                _notificationStatus.postValue(e)
+
             }
 
             //catch outgoing call connect
@@ -110,15 +117,21 @@ class SipViewModel: ViewModel() {
                 //mysipclient.PlaySound(e.getLine(), "mysound.wav", 0, false, true, true, -1,"",false); //stream an audio file
             } else if (e.getStatus() == SIPNotification.Status.STATUS_CALL_RINGING && e.endpointType == SIPNotification.Status.DIRECTION_IN) {
                 _status.postValue("Incoming call from " + e.peerDisplayname)
+                _notificationStatus.postValue(e)
 
                 //auto accepting the incoming call (instead of auto accept, you might present an Accept/Reject button for the user which will call Accept / Reject)
-                sipStack.Accept(e.getLine())
+
+//                sipStack.Accept(e.getLine())
+                Log.d("SipViewModel","Status--->${e.getStatus()} ${e.statusText} ${e.peerDisplayname}")
             } else if (e.getStatus() == SIPNotification.Status.STATUS_CALL_CONNECT && e.endpointType == SIPNotification.Status.DIRECTION_IN) {
                 _status.postValue("Incoming call connected")
+                _notificationStatus.postValue(e)
+
+                Log.d("SipViewModel","Incoming call connected: Status--->${e.getStatus()}  ${e.statusText} ${e.peerDisplayname} ")
+
             }
 
         }
-
         override fun onEvent(e: SIPNotification.Event?) {
             _status.postValue("Important event: " + e?.getText())
 
