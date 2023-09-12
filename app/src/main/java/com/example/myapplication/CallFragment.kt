@@ -1,5 +1,6 @@
 package com.example.myapplication
 
+import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import androidx.fragment.app.Fragment
@@ -7,32 +8,35 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
-import androidx.navigation.fragment.findNavController
+import android.widget.TextView
+import com.example.myapplication.databinding.FragmentCallBinding
 import com.example.myapplication.viewmodels.SipViewModel
 import java.io.Serializable
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
 
-/**
- * A simple [Fragment] subclass.
- * Use the [CallFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
 class CallFragment : Fragment() {
-    // TODO: Rename and change types of parameters
     private var param1: String? = null
     private val TAG = CallFragment::class.java.simpleName
-    lateinit var endCallBtn: Button
-    lateinit var speakerBtn: Button
-    lateinit var muteBtn: Button
+
     lateinit var viewModel: SipViewModel
     var isMute = false
 
+    lateinit var binding: FragmentCallBinding
+    var listener: (() -> Unit)? = null
+    var muteCall: ((Boolean) -> Unit)? = null
+//    var listener: (() -> Unit)? = null
+
+    companion object{
+
+    }
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        Log.d(TAG, "onAttach Called")
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Log.d(TAG, "onCreate Called")
 
     }
 
@@ -40,65 +44,69 @@ class CallFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        // Inflate the layout for this fragment
-
-        Log.d(TAG, "Fragment---> $TAG Created")
-        val v = inflater.inflate(R.layout.fragment_call, container, false)
-        viewModel = (activity as MainActivity).viewModel
-        initViews(v)
-        return v
+        Log.d(TAG, "onCreateView Called")
+        binding = FragmentCallBinding.inflate(inflater, container, false)
+        return binding.root
     }
 
-    private fun initViews(v: View) {
-        endCallBtn = v.findViewById(R.id.endCallButton)
-        muteBtn = v.findViewById(R.id.muteBtn)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        Log.d(TAG, "onViewCreated Called")
+
+//        viewModel = (activity as MainActivity).viewModel
+        initViews()
+
+    }
+
+    private fun initViews() {
+
         initListeners()
     }
 
     private fun initListeners() {
-        endCallBtn.setOnClickListener {
-//            findNavController().popBackStack()
-            val manager = requireActivity().supportFragmentManager
-            manager.popBackStackImmediate()
 
-            viewModel.endCall()
+        binding.endCallButton.setOnClickListener {
+            listener?.invoke()
+//             viewModel.endCall()
+//             (activity as MainActivity).popBackStack()
         }
-        muteBtn.setOnClickListener {
-            if (isMute) {
+        binding.muteBtn.setOnClickListener {
+            if((activity as MainActivity).isMute){
+                muteCall?.invoke(true)
+                binding.muteBtn.text = "Unmute"
+
+            }else{
+                muteCall?.invoke(false)
+                binding.muteBtn.text = "Mute"
+
+            }
+           /* if (isMute) {
                 viewModel.callUnmute()
             } else {
                 viewModel.callMute()
-            }
+            }*/
         }
-        viewModel.isMute.observe(viewLifecycleOwner) {
-            isMute = if (it) {
-                muteBtn.text = "Unmute"
-                it
-            } else {
-                muteBtn.text = "mute"
-                it
-            }
-        }
-    }
+         /*viewModel.isMute.observe(viewLifecycleOwner) {
+             isMute = if (it) {
+                 binding.muteBtn.text = "Unmute"
+                 it
+             } else {
+                 binding.muteBtn.text = "mute"
+                 it
+             }
+         }
+         viewModel.status.observe(viewLifecycleOwner) {
+             binding.callTimeTv.text = it
+         }*/
 
 
-    companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment CallFragment.
-         */
-        // TODO: Rename and change types and number of parameters
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            CallFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
-                }
-            }
     }
+
+   fun addListener(action :()->Unit){
+       listener = action
+   }
+    fun addMuteCallListener(action:(Boolean)->Unit){
+        muteCall = action
+    }
+
 }

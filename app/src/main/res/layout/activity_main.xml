@@ -1,43 +1,122 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/meraFragmentContainerView"
     android:layout_width="match_parent"
-
-    android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
-    <FrameLayout
-        android:id="@+id/fragmentContainerView"
+    android:layout_height="match_parent">
+    <RelativeLayout
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-
-
-        />
-    <Button
-        android:id="@+id/connectVpn"
-        android:visibility="gone"
+        android:layout_height="match_parent">
+    <LinearLayout
+        android:id="@+id/connectionStatus"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
-        android:text="Coonect to VPN" />
+        android:layout_marginStart="20dp"
+        android:layout_marginLeft="20dp"
+        android:orientation="vertical"
+        >
 
-    <EditText
-        android:id="@+id/calltoET"
-        android:visibility="gone"
+        <TextView
+            android:id="@+id/logTV"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="15dp"
+            android:text="Connection Status"
+            android:textSize="15sp"
+            android:textStyle="bold" />
 
-        android:layout_width="match_parent"
-        android:layout_marginTop="50dp"
-        android:hint="Enter number "
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/connectVpn" />
+        <TextView
+            android:id="@+id/durationTv"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            android:text="Duration: 00:00:00"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/lastPacketReceiveTv"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            android:text="Packet Received:"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/byteInTv"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            android:text="Bytes In: "
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/byteOutTv"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            android:text="Bytes OUT: "
+            android:textSize="14sp" />
+
+        <Button
+            android:id="@+id/vpnBtn"
+            android:layout_width="150dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="10dp"
+            android:layout_marginRight="30dp"
+            android:tag="1"
+            android:text="Connect Vpn"
+            android:textSize="16sp" />
+    </LinearLayout>
+
 
     <LinearLayout
-        android:visibility="gone"
+        android:id="@+id/credLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/connectionStatus"
+        android:layout_marginHorizontal="12dp"
+        android:orientation="vertical"
+        >
+
+        <EditText
+            android:id="@+id/username"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:hint="username" />
+
+        <EditText
+            android:id="@+id/domain"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+
+            android:layout_marginTop="6dp"
+            android:hint="domain" />
+
+        <EditText
+            android:id="@+id/password"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:hint="password" />
+
+    </LinearLayout>
+
+    <LinearLayout
 
         android:id="@+id/LL"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-
-        android:layout_below="@+id/calltoET"
-        android:orientation="horizontal">
+        android:layout_below="@id/credLayout"
+        android:layout_marginTop="12dp"
+        android:orientation="horizontal"
+        >
 
         <Button
             android:id="@+id/startSipStack"
@@ -54,52 +133,73 @@
 
             android:layout_weight="1"
             android:text="Stop Sip" />
-        />
+
     </LinearLayout>
 
     <TextView
         android:id="@+id/logTextView"
-        android:visibility="gone"
-
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_above="@+id/callBtn"
+        android:layout_below="@+id/LL"
         android:background="@color/black"
         android:textColor="@color/yellow"
-        android:layout_below="@+id/LL" />
-
-    <ImageButton
-        android:id="@+id/clearLog"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:visibility="gone"
-
+        />
+    <RelativeLayout
+        android:id="@+id/active_call_Container"
         android:layout_below="@+id/LL"
-        android:layout_alignParentEnd="true"
-        android:backgroundTint="@android:color/transparent"
-        android:src="@android:drawable/ic_notification_clear_all"
-        android:text="clear log" />
+        android:background="@color/black"
+        android:visibility="gone"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
 
         <Button
-            android:id="@+id/callBtn"
+            android:id="@+id/muteBtn"
             android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_above="@+id/endCallButton"
+            android:layout_marginBottom="30dp"
+            android:layout_weight="1"
+            android:text="mute" />
 
+        <Button
+            android:id="@+id/endCallButton"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"
-            android:layout_weight="1"
-            android:visibility="gone"
+            android:background="@android:color/holo_red_dark"
+            android:text="end call" />
 
-            android:text="call" />
-
-        <Button
-            android:id="@+id/stopBtn"
-            android:layout_weight="1"
-            android:visibility="gone"
-            android:layout_width="match_parent"
+        <TextView
+            android:id="@+id/textView"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="hangup" />
+            android:layout_alignParentTop="true"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="30dp"
+            android:text="Active call"
+            android:textColor="@color/white"
+            android:textSize="18sp" />
 
+        <TextView
+            android:id="@+id/call_time_tv"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/textView"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="12dp"
+            android:text="00:00"
+            android:textColor="@color/white"
+            android:textSize="18sp" />
+    </RelativeLayout>
+    </RelativeLayout>
+    <FrameLayout
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:visibility="gone"
+        android:id="@+id/fragment_container"
+        android:layout_width="0dp"
+        android:layout_height="0dp"/>
 
-
-
-</RelativeLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>
