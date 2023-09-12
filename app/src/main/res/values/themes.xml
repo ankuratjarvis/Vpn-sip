@@ -3,5 +3,7 @@
 
     <style name="Theme.MyApplication" parent="Theme.AppCompat.Light.NoActionBar" >
     </style>
-
+    <style name="Background">
+        <item name="android:windowBackground">@color/black</item>
+    </style>
 </resources>

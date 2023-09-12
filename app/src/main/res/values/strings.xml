@@ -15,4 +15,6 @@
     <string name="loading_server">Loading Server..</string>
     <string name="invalid_device">Invalid Device</string>
     <string name="authentication_checking">Authentication \n Checking...</string>
+    <string name="channel_description">Sip Notification Channel</string>
+    <string name="channel_name">sip channel</string>
 </resources>
