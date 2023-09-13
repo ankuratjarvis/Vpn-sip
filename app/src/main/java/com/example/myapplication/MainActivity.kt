@@ -51,6 +51,14 @@ import de.blinkt.openvpn.core.OpenVPNThread
 import de.blinkt.openvpn.core.VpnStatus
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import org.pjsip.pjsua2.Account
+import org.pjsip.pjsua2.AccountConfig
+import org.pjsip.pjsua2.AccountSipConfig
+import org.pjsip.pjsua2.AuthCredInfoVector
+import org.pjsip.pjsua2.Endpoint
+import org.pjsip.pjsua2.EpConfig
+import org.pjsip.pjsua2.TransportConfig
+import org.pjsip.pjsua2.pjsip_transport_type_e
 import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
@@ -74,6 +82,7 @@ class MainActivity : AppCompatActivity() {
     var isMute = false
 
     var inBackground = false
+
     @RequiresApi(Build.VERSION_CODES.Q)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -105,6 +114,22 @@ class MainActivity : AppCompatActivity() {
 
     private fun initListeners() {
         binding.startSipStack.setOnClickListener {
+            /*  val endpoint = Endpoint()
+              endpoint.libCreate()
+              val epConfig = EpConfig()
+              endpoint.libInit(epConfig)
+
+
+              val transport = TransportConfig()
+              transport.port = 5060
+              endpoint.transportCreate(pjsip_transport_type_e.PJSIP_TRANSPORT_UDP,transport)
+
+              endpoint.libStart()
+
+             val acc =  AccountConfig()
+              acc.sipConfig = AccountSipConfig().apply {
+                  this.
+              }*/
             if (binding.username.text.isNotEmpty() && binding.domain.text.isNotEmpty() && binding.password.text.isNotEmpty()) {
                 startSip()
                 showToast("Starting SIP Stack")
@@ -156,11 +181,11 @@ class MainActivity : AppCompatActivity() {
             binding.logTextView.DisplayLogs(it)
         }*/
         binding.vpnBtn.setOnClickListener {
-             if (vpnStart) {
-                 confirmDisconnect()
-             } else {
-                 prepareVpn()
-             }
+            if (vpnStart) {
+                confirmDisconnect()
+            } else {
+                prepareVpn()
+            }
         }
         binding.endCallButton.setOnClickListener {
 
@@ -323,17 +348,17 @@ class MainActivity : AppCompatActivity() {
 
                     if (e.getStatus() == SIPNotification.Status.STATUS_CALL_RINGING && e.endpointType == SIPNotification.Status.DIRECTION_IN) {
                         binding.logTextView.DisplayLogs("Incoming call from " + e.peerDisplayname)
-                      job.launch(Dispatchers.Main) {
+                      /*  job.launch(Dispatchers.Main) {
                             if (inBackground) {
-                                Log.d(TAG,"acamcashcaskjcbakjcbaskjcascbasjcb")
+                                Log.d(TAG, "acamcashcaskjcbakjcbaskjcascbasjcb")
                                 showCallNotification()
                             }
-                        }
-                        /*   sipStack.Accept(e.getLine())
+                        }*/
+                           sipStack.Accept(e.getLine())
                            job.launch(Dispatchers.Main) {
                                showCallActiveFragment()
 
-                           }*/
+                           }
 
                     } else if (e.getStatus() == SIPNotification.Status.STATUS_CALL_CONNECT) {
                         binding.logTextView.DisplayLogs("Incoming call connected")
@@ -462,6 +487,7 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
         stopVpn()
     }
+
     private fun prepareVpn() {
         if (!vpnStart) {
             if (getInternetStatus()) {
@@ -490,6 +516,7 @@ class MainActivity : AppCompatActivity() {
             showToast("Disconnect Successfully")
         }
     }
+
     private fun getInternetStatus(): Boolean {
         return netCheck(this)
     }
@@ -596,16 +623,17 @@ class MainActivity : AppCompatActivity() {
         fragmentManager.popBackStackImmediate()
         binding.fragmentContainer.visibility = View.GONE
     }
+
     private fun confirmDisconnect() {
         val builder = AlertDialog.Builder(
             this
         )
         builder.setMessage(getString(R.string.connection_close_confirm))
         builder.setPositiveButton(
-         getString(R.string.yes)
+            getString(R.string.yes)
         ) { dialog, id -> stopVpn() }
         builder.setNegativeButton(
-           getString(R.string.no)
+            getString(R.string.no)
         ) { dialog, id ->
             // User cancelled the dialog
         }
@@ -677,15 +705,16 @@ class MainActivity : AppCompatActivity() {
         sipStack.Mute(-1, flag)
 
     }
+
     /*private inline fun <reified T:Any> newIntent(context: Context) = Intent(context,T::class.java)
     private inline fun <reified T:Any> startActivity(noinline init:Intent.() ->Unit={}){
         val intent = newIntent<T>(this)
         intent.init()
         startActivity(intent)
     }*/
-private val lifecycleCallbackListener = object:ActivityLifecycleCallbacks{
+    private val lifecycleCallbackListener = object : ActivityLifecycleCallbacks {
         override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
-         inBackground = false
+            inBackground = false
         }
 
         override fun onActivityStarted(activity: Activity) {
@@ -694,9 +723,9 @@ private val lifecycleCallbackListener = object:ActivityLifecycleCallbacks{
         }
 
         override fun onActivityResumed(activity: Activity) {
-            if(inBackground){
+            if (inBackground) {
                 inBackground = false
-                job.launch (Dispatchers.Main){
+                job.launch(Dispatchers.Main) {
                 }
 
             }
