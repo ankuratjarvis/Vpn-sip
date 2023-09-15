@@ -12,12 +12,10 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.net.VpnService
-import android.net.sip.SipAudioCall
-import android.net.sip.SipManager
-import android.net.sip.SipProfile
-import android.net.sip.SipRegistrationListener
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Message
 import android.os.RemoteException
 import android.text.method.ScrollingMovementMethod
 import android.util.Log
@@ -37,11 +35,11 @@ import androidx.lifecycle.lifecycleScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.example.myapplication.common.Constants
 import com.example.myapplication.common.DisplayLogs
-import com.example.myapplication.common.isAppInForeground
 import com.example.myapplication.common.netCheck
 import com.example.myapplication.databinding.ActivityMainBinding
 import com.example.myapplication.model.Server
 import com.example.myapplication.model.UserCredentials
+//import com.example.myapplication.pjsip.SipMainActivity.MSG_TYPE
 import com.mizuvoip.jvoip.SIPNotification
 import com.mizuvoip.jvoip.SIPNotificationListener
 import com.mizuvoip.jvoip.SipStack
@@ -51,18 +49,10 @@ import de.blinkt.openvpn.core.OpenVPNThread
 import de.blinkt.openvpn.core.VpnStatus
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import org.pjsip.pjsua2.Account
-import org.pjsip.pjsua2.AccountConfig
-import org.pjsip.pjsua2.AccountSipConfig
-import org.pjsip.pjsua2.AuthCredInfoVector
-import org.pjsip.pjsua2.Endpoint
-import org.pjsip.pjsua2.EpConfig
-import org.pjsip.pjsua2.TransportConfig
-import org.pjsip.pjsua2.pjsip_transport_type_e
+
 import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
-import java.time.temporal.ValueRange
 
 
 class MainActivity : AppCompatActivity() {
@@ -114,28 +104,13 @@ class MainActivity : AppCompatActivity() {
 
     private fun initListeners() {
         binding.startSipStack.setOnClickListener {
-            /*  val endpoint = Endpoint()
-              endpoint.libCreate()
-              val epConfig = EpConfig()
-              endpoint.libInit(epConfig)
-
-
-              val transport = TransportConfig()
-              transport.port = 5060
-              endpoint.transportCreate(pjsip_transport_type_e.PJSIP_TRANSPORT_UDP,transport)
-
-              endpoint.libStart()
-
-             val acc =  AccountConfig()
-              acc.sipConfig = AccountSipConfig().apply {
-                  this.
-              }*/
-            if (binding.username.text.isNotEmpty() && binding.domain.text.isNotEmpty() && binding.password.text.isNotEmpty()) {
+            startPjSip()
+            /*if (binding.username.text.isNotEmpty() && binding.domain.text.isNotEmpty() && binding.password.text.isNotEmpty()) {
                 startSip()
                 showToast("Starting SIP Stack")
             } else {
                 showToast("Please enter required Details")
-            }
+            }*/
         }
 
         binding.stopSIP.setOnClickListener {
@@ -215,6 +190,23 @@ class MainActivity : AppCompatActivity() {
 
     }
 
+    fun startPjSip(){
+         /* val endpoint = Endpoint()
+              endpoint.libCreate()
+              val epConfig = EpConfig()
+              endpoint.libInit(epConfig)
+
+
+              val transport = TransportConfig()
+              transport.port = 5060
+              endpoint.transportCreate(pjsip_transport_type_e.PJSIP_TRANSPORT_UDP,transport)
+
+              endpoint.libStart()
+
+             val acc =  AccountConfig()
+              acc.sipConfig = AccountSipConfig().apply {
+              }*/
+    }
     private fun showCallActiveFragment() {
         binding.fragmentContainer.visibility = View.VISIBLE
         addFragment<CallFragment>(true)
@@ -348,17 +340,17 @@ class MainActivity : AppCompatActivity() {
 
                     if (e.getStatus() == SIPNotification.Status.STATUS_CALL_RINGING && e.endpointType == SIPNotification.Status.DIRECTION_IN) {
                         binding.logTextView.DisplayLogs("Incoming call from " + e.peerDisplayname)
-                      /*  job.launch(Dispatchers.Main) {
-                            if (inBackground) {
-                                Log.d(TAG, "acamcashcaskjcbakjcbaskjcascbasjcb")
-                                showCallNotification()
-                            }
-                        }*/
-                           sipStack.Accept(e.getLine())
-                           job.launch(Dispatchers.Main) {
-                               showCallActiveFragment()
+                        /*  job.launch(Dispatchers.Main) {
+                              if (inBackground) {
+                                  Log.d(TAG, "acamcashcaskjcbakjcbaskjcascbasjcb")
+                                  showCallNotification()
+                              }
+                          }*/
+                        sipStack.Accept(e.getLine())
+                        job.launch(Dispatchers.Main) {
+                            showCallActiveFragment()
 
-                           }
+                        }
 
                     } else if (e.getStatus() == SIPNotification.Status.STATUS_CALL_CONNECT) {
                         binding.logTextView.DisplayLogs("Incoming call connected")

@@ -1,8 +1,0 @@
-de.blinkt.openvpn.test.vpnLib-core-1.1.0-0 /home/dell/.gradle/caches/transforms-3/5d5963fed9e040b76cb7f405302e34ac/transformed/core-1.1.0/res
-de.blinkt.openvpn.test.vpnLib-appcompat-resources-1.1.0-1 /home/dell/.gradle/caches/transforms-3/68af56a97c0f734c9ed9130cded27a70/transformed/appcompat-resources-1.1.0/res
-de.blinkt.openvpn.test.vpnLib-appcompat-1.1.0-2 /home/dell/.gradle/caches/transforms-3/96d1313186bc83d370ca7f0c957c33fa/transformed/appcompat-1.1.0/res
-de.blinkt.openvpn.test.vpnLib-androidTest-3 /home/dell/AndroidStudioProjects/MyApplication/vpnLib/build/generated/res/resValues/androidTest/debug
-de.blinkt.openvpn.test.vpnLib-mergeDebugAndroidTestResources-4 /home/dell/AndroidStudioProjects/MyApplication/vpnLib/build/intermediates/incremental/debugAndroidTest/mergeDebugAndroidTestResources/merged.dir
-de.blinkt.openvpn.test.vpnLib-mergeDebugAndroidTestResources-5 /home/dell/AndroidStudioProjects/MyApplication/vpnLib/build/intermediates/incremental/debugAndroidTest/mergeDebugAndroidTestResources/stripped.dir
-de.blinkt.openvpn.test.vpnLib-merged_res-6 /home/dell/AndroidStudioProjects/MyApplication/vpnLib/build/intermediates/merged_res/debugAndroidTest
-de.blinkt.openvpn.test.vpnLib-packaged_res-7 /home/dell/AndroidStudioProjects/MyApplication/vpnLib/build/intermediates/packaged_res/debug

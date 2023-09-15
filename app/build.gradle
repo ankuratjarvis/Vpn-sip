@@ -79,6 +79,7 @@ dependencies {
     implementation 'androidx.fragment:fragment-ktx:1.6.1'
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
     implementation project(path: ':vpnLib')
+    implementation project(path: ':pjsua2')
 
     // Navigation Graph
     implementation "androidx.navigation:navigation-ui-ktx:2.5.0"

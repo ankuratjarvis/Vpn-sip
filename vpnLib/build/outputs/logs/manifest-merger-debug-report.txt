@@ -1,25 +1,25 @@
 -- Merging decision tree log ---
 manifest
-ADDED from /home/dell/AndroidStudioProjects/MyApplication/vpnLib/src/main/AndroidManifest.xml:1:1-41
-INJECTED from /home/dell/AndroidStudioProjects/MyApplication/vpnLib/src/main/AndroidManifest.xml:1:1-41
-INJECTED from /home/dell/AndroidStudioProjects/MyApplication/vpnLib/src/main/AndroidManifest.xml:1:1-41
+ADDED from /home/hp/StudioProjects/Vpn-sip/vpnLib/src/main/AndroidManifest.xml:1:1-41
+INJECTED from /home/hp/StudioProjects/Vpn-sip/vpnLib/src/main/AndroidManifest.xml:1:1-41
+INJECTED from /home/hp/StudioProjects/Vpn-sip/vpnLib/src/main/AndroidManifest.xml:1:1-41
 	package
-		ADDED from /home/dell/AndroidStudioProjects/MyApplication/vpnLib/src/main/AndroidManifest.xml:1:11-38
-		INJECTED from /home/dell/AndroidStudioProjects/MyApplication/vpnLib/src/main/AndroidManifest.xml
-		INJECTED from /home/dell/AndroidStudioProjects/MyApplication/vpnLib/src/main/AndroidManifest.xml
+		ADDED from /home/hp/StudioProjects/Vpn-sip/vpnLib/src/main/AndroidManifest.xml:1:11-38
+		INJECTED from /home/hp/StudioProjects/Vpn-sip/vpnLib/src/main/AndroidManifest.xml
+		INJECTED from /home/hp/StudioProjects/Vpn-sip/vpnLib/src/main/AndroidManifest.xml
 	xmlns:android
-		ADDED from /home/dell/AndroidStudioProjects/MyApplication/vpnLib/src/main/AndroidManifest.xml:1:1-41
+		ADDED from /home/hp/StudioProjects/Vpn-sip/vpnLib/src/main/AndroidManifest.xml:1:1-41
 uses-sdk
-INJECTED from /home/dell/AndroidStudioProjects/MyApplication/vpnLib/src/main/AndroidManifest.xml reason: use-sdk injection requested
-INJECTED from /home/dell/AndroidStudioProjects/MyApplication/vpnLib/src/main/AndroidManifest.xml
-INJECTED from /home/dell/AndroidStudioProjects/MyApplication/vpnLib/src/main/AndroidManifest.xml
-INJECTED from /home/dell/AndroidStudioProjects/MyApplication/vpnLib/src/main/AndroidManifest.xml
-INJECTED from /home/dell/AndroidStudioProjects/MyApplication/vpnLib/src/main/AndroidManifest.xml
+INJECTED from /home/hp/StudioProjects/Vpn-sip/vpnLib/src/main/AndroidManifest.xml reason: use-sdk injection requested
+INJECTED from /home/hp/StudioProjects/Vpn-sip/vpnLib/src/main/AndroidManifest.xml
+INJECTED from /home/hp/StudioProjects/Vpn-sip/vpnLib/src/main/AndroidManifest.xml
+INJECTED from /home/hp/StudioProjects/Vpn-sip/vpnLib/src/main/AndroidManifest.xml
+INJECTED from /home/hp/StudioProjects/Vpn-sip/vpnLib/src/main/AndroidManifest.xml
 	android:targetSdkVersion
-		INJECTED from /home/dell/AndroidStudioProjects/MyApplication/vpnLib/src/main/AndroidManifest.xml
-		ADDED from /home/dell/AndroidStudioProjects/MyApplication/vpnLib/src/main/AndroidManifest.xml
-		INJECTED from /home/dell/AndroidStudioProjects/MyApplication/vpnLib/src/main/AndroidManifest.xml
+		INJECTED from /home/hp/StudioProjects/Vpn-sip/vpnLib/src/main/AndroidManifest.xml
+		ADDED from /home/hp/StudioProjects/Vpn-sip/vpnLib/src/main/AndroidManifest.xml
+		INJECTED from /home/hp/StudioProjects/Vpn-sip/vpnLib/src/main/AndroidManifest.xml
 	android:minSdkVersion
-		INJECTED from /home/dell/AndroidStudioProjects/MyApplication/vpnLib/src/main/AndroidManifest.xml
-		ADDED from /home/dell/AndroidStudioProjects/MyApplication/vpnLib/src/main/AndroidManifest.xml
-		INJECTED from /home/dell/AndroidStudioProjects/MyApplication/vpnLib/src/main/AndroidManifest.xml
+		INJECTED from /home/hp/StudioProjects/Vpn-sip/vpnLib/src/main/AndroidManifest.xml
+		ADDED from /home/hp/StudioProjects/Vpn-sip/vpnLib/src/main/AndroidManifest.xml
+		INJECTED from /home/hp/StudioProjects/Vpn-sip/vpnLib/src/main/AndroidManifest.xml
