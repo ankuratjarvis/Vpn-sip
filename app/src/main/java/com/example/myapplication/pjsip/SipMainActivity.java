@@ -62,7 +62,7 @@ import org.pjsip.pjsua2.pjsip_inv_state;
 import org.pjsip.pjsua2.pjsip_status_code;
 
 public class SipMainActivity extends Activity
-                          implements Handler.Callback, MyAppObserver
+        implements Handler.Callback, MyAppObserver
 {
     public static MyApp app = null;
     public static MyCall currentCall = null;
@@ -100,12 +100,12 @@ public class SipMainActivity extends Activity
         private boolean isNetworkChange(Context context) {
             boolean network_changed = false;
             ConnectivityManager connectivity_mgr =
-                ((ConnectivityManager)context.getSystemService(
-                                                 Context.CONNECTIVITY_SERVICE));
+                    ((ConnectivityManager)context.getSystemService(
+                            Context.CONNECTIVITY_SERVICE));
 
             NetworkInfo net_info = connectivity_mgr.getActiveNetworkInfo();
             if(net_info != null && net_info.isConnectedOrConnecting() &&
-               !conn_name.equalsIgnoreCase(""))
+                    !conn_name.equalsIgnoreCase(""))
             {
                 String new_con = net_info.getExtraInfo();
                 if (new_con != null && !new_con.equalsIgnoreCase(conn_name))
@@ -146,8 +146,8 @@ public class SipMainActivity extends Activity
             app = new MyApp();
             // Wait for GDB to init, for native debugging only
             if (false &&
-                (getApplicationInfo().flags &
-                ApplicationInfo.FLAG_DEBUGGABLE) != 0)
+                    (getApplicationInfo().flags &
+                            ApplicationInfo.FLAG_DEBUGGABLE) != 0)
             {
                 try {
                     Thread.sleep(5000);
@@ -172,41 +172,41 @@ public class SipMainActivity extends Activity
         buddyList = new ArrayList<Map<String, String>>();
         for (int i = 0; i < account.buddyList.size(); i++) {
             buddyList.add(putData(account.buddyList.get(i).cfg.getUri(),
-                                  account.buddyList.get(i).getStatusText()));
+                    account.buddyList.get(i).getStatusText()));
         }
 
         String[] from = { "uri", "status" };
         int[] to = { android.R.id.text1, android.R.id.text2 };
         buddyListAdapter = new SimpleAdapter(
-                                        this, buddyList,
-                                        android.R.layout.simple_list_item_2,
-                                        from, to);
+                this, buddyList,
+                android.R.layout.simple_list_item_2,
+                from, to);
 
         buddyListView = (ListView) findViewById(R.id.listViewBuddy);;
         buddyListView.setAdapter(buddyListAdapter);
         buddyListView.setOnItemClickListener(
-            new AdapterView.OnItemClickListener()
-            {
-                @Override
-                public void onItemClick(AdapterView<?> parent,
-                                        final View view,
-                                        int position, long id)
+                new AdapterView.OnItemClickListener()
                 {
-                    view.setSelected(true);
-                    buddyListSelectedIdx = position;
+                    @Override
+                    public void onItemClick(AdapterView<?> parent,
+                                            final View view,
+                                            int position, long id)
+                    {
+                        view.setSelected(true);
+                        buddyListSelectedIdx = position;
+                    }
                 }
-            }
         );
         if (receiver == null) {
             receiver = new MyBroadcastReceiver();
             intentFilter = new IntentFilter(
-                                       ConnectivityManager.CONNECTIVITY_ACTION);
+                    ConnectivityManager.CONNECTIVITY_ACTION);
             registerReceiver(receiver, intentFilter);
         }
 
         ImageButton accDialog = findViewById(R.id.buttonEditBuddy);
         accDialog.setOnClickListener(v -> {
-                dlgAccountSetting();
+            dlgAccountSetting();
         });
     }
 
@@ -275,8 +275,8 @@ public class SipMainActivity extends Activity
             /* Forward the message to CallActivity */
             if (CallActivity.handler_ != null) {
                 Message m2 = Message.obtain(CallActivity.handler_,
-                    MSG_TYPE.CALL_MEDIA_STATE,
-                    null);
+                        MSG_TYPE.CALL_MEDIA_STATE,
+                        null);
                 m2.sendToTarget();
             }
 
@@ -286,8 +286,8 @@ public class SipMainActivity extends Activity
             int idx = account.buddyList.indexOf(buddy);
 
             /* Update buddy status text, if buddy is valid and
-            * the buddy lists in account and UI are sync-ed.
-            */
+             * the buddy lists in account and UI are sync-ed.
+             */
             if (idx >= 0 && account.buddyList.size() == buddyList.size())
             {
                 buddyList.get(idx).put("status", buddy.getStatusText());
@@ -388,50 +388,50 @@ public class SipMainActivity extends Activity
 
         adb.setCancelable(false);
         adb.setPositiveButton("OK",
-            new DialogInterface.OnClickListener()
-            {
-                public void onClick(DialogInterface dialog,int id)
+                new DialogInterface.OnClickListener()
                 {
-                    String acc_id        = etId.getText().toString();
-                    String registrar = etReg.getText().toString();
-                    String proxy         = etProxy.getText().toString();
-                    String username  = etUser.getText().toString();
-                    String password  = etPass.getText().toString();
+                    public void onClick(DialogInterface dialog,int id)
+                    {
+                        String acc_id        = etId.getText().toString();
+                        String registrar = etReg.getText().toString();
+                        String proxy         = etProxy.getText().toString();
+                        String username  = etUser.getText().toString();
+                        String password  = etPass.getText().toString();
 
-                    accCfg.setIdUri(acc_id);
-                    accCfg.getRegConfig().setRegistrarUri(registrar);
-                    AuthCredInfoVector creds = accCfg.getSipConfig().
-                                                            getAuthCreds();
-                    creds.clear();
-                    if (username.length() != 0) {
-                        creds.add(new AuthCredInfo("Digest", "*", username, 0,
-                                                   password));
+                        accCfg.setIdUri(acc_id);
+                        accCfg.getRegConfig().setRegistrarUri(registrar);
+                        AuthCredInfoVector creds = accCfg.getSipConfig().
+                                getAuthCreds();
+                        creds.clear();
+                        if (username.length() != 0) {
+                            creds.add(new AuthCredInfo("Digest", "*", username, 0,
+                                    password));
+                        }
+                        StringVector proxies = accCfg.getSipConfig().getProxies();
+                        proxies.clear();
+                        if (proxy.length() != 0) {
+                            proxies.add(proxy);
+                        }
+
+                        /* Enable ICE */
+                        accCfg.getNatConfig().setIceEnabled(true);
+
+                        /* Finally */
+                        lastRegStatus = "";
+                        try {
+                            account.modify(accCfg);
+                        } catch (Exception e) {}
                     }
-                    StringVector proxies = accCfg.getSipConfig().getProxies();
-                    proxies.clear();
-                    if (proxy.length() != 0) {
-                        proxies.add(proxy);
-                    }
-
-                    /* Enable ICE */
-                    accCfg.getNatConfig().setIceEnabled(true);
-
-                    /* Finally */
-                    lastRegStatus = "";
-                    try {
-                        account.modify(accCfg);
-                    } catch (Exception e) {}
                 }
-            }
         );
         adb.setNegativeButton("Cancel",
-            new DialogInterface.OnClickListener()
-            {
-                public void onClick(DialogInterface dialog,int id)
+                new DialogInterface.OnClickListener()
                 {
-                    dialog.cancel();
+                    public void onClick(DialogInterface dialog,int id)
+                    {
+                        dialog.cancel();
+                    }
                 }
-            }
         );
 
         AlertDialog ad = adb.create();
@@ -450,7 +450,7 @@ public class SipMainActivity extends Activity
         }
 
         HashMap<String, String> item = (HashMap<String, String>) buddyListView.
-                                       getItemAtPosition(buddyListSelectedIdx);
+                getItemAtPosition(buddyListSelectedIdx);
         String buddy_uri = item.get("uri");
 
         MyCall call = new MyCall(account, -1);
@@ -492,46 +492,46 @@ public class SipMainActivity extends Activity
 
         adb.setCancelable(false);
         adb.setPositiveButton("OK",
-            new DialogInterface.OnClickListener()
-            {
-                public void onClick(DialogInterface dialog,int id)
+                new DialogInterface.OnClickListener()
                 {
-                    cfg.setUri(etUri.getText().toString());
-                    cfg.setSubscribe(cbSubs.isChecked());
+                    public void onClick(DialogInterface dialog,int id)
+                    {
+                        cfg.setUri(etUri.getText().toString());
+                        cfg.setSubscribe(cbSubs.isChecked());
 
-                    if (is_add) {
-                        account.addBuddy(cfg);
-                        buddyList.add(putData(cfg.getUri(), ""));
-                        buddyListAdapter.notifyDataSetChanged();
-                        buddyListSelectedIdx = -1;
-                    } else {
-                        if (!old_cfg.getUri().equals(cfg.getUri())) {
-                            account.delBuddy(buddyListSelectedIdx);
+                        if (is_add) {
                             account.addBuddy(cfg);
-                            buddyList.remove(buddyListSelectedIdx);
                             buddyList.add(putData(cfg.getUri(), ""));
                             buddyListAdapter.notifyDataSetChanged();
                             buddyListSelectedIdx = -1;
-                        } else if (old_cfg.getSubscribe() !=
-                                   cfg.getSubscribe())
-                        {
-                            MyBuddy bud = account.buddyList.get(
-                                                        buddyListSelectedIdx);
-                            try {
-                                bud.subscribePresence(cfg.getSubscribe());
-                            } catch (Exception e) {}
+                        } else {
+                            if (!old_cfg.getUri().equals(cfg.getUri())) {
+                                account.delBuddy(buddyListSelectedIdx);
+                                account.addBuddy(cfg);
+                                buddyList.remove(buddyListSelectedIdx);
+                                buddyList.add(putData(cfg.getUri(), ""));
+                                buddyListAdapter.notifyDataSetChanged();
+                                buddyListSelectedIdx = -1;
+                            } else if (old_cfg.getSubscribe() !=
+                                    cfg.getSubscribe())
+                            {
+                                MyBuddy bud = account.buddyList.get(
+                                        buddyListSelectedIdx);
+                                try {
+                                    bud.subscribePresence(cfg.getSubscribe());
+                                } catch (Exception e) {}
+                            }
                         }
                     }
                 }
-            }
         );
         adb.setNegativeButton("Cancel",
-            new DialogInterface.OnClickListener()
-            {
-                public void onClick(DialogInterface dialog,int id) {
-                    dialog.cancel();
+                new DialogInterface.OnClickListener()
+                {
+                    public void onClick(DialogInterface dialog,int id) {
+                        dialog.cancel();
+                    }
                 }
-            }
         );
 
         AlertDialog ad = adb.create();
@@ -557,27 +557,27 @@ public class SipMainActivity extends Activity
             return;
 
         final HashMap<String, String> item = (HashMap<String, String>)
-                        buddyListView.getItemAtPosition(buddyListSelectedIdx);
+                buddyListView.getItemAtPosition(buddyListSelectedIdx);
         String buddy_uri = item.get("uri");
 
         DialogInterface.OnClickListener ocl =
-                                        new DialogInterface.OnClickListener()
-        {
-            @Override
-            public void onClick(DialogInterface dialog, int which)
-            {
-                switch (which) {
-                    case DialogInterface.BUTTON_POSITIVE:
-                        account.delBuddy(buddyListSelectedIdx);
-                        buddyList.remove(item);
-                        buddyListAdapter.notifyDataSetChanged();
-                        buddyListSelectedIdx = -1;
-                        break;
-                    case DialogInterface.BUTTON_NEGATIVE:
-                        break;
-                }
-            }
-        };
+                new DialogInterface.OnClickListener()
+                {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which)
+                    {
+                        switch (which) {
+                            case DialogInterface.BUTTON_POSITIVE:
+                                account.delBuddy(buddyListSelectedIdx);
+                                buddyList.remove(item);
+                                buddyListAdapter.notifyDataSetChanged();
+                                buddyListSelectedIdx = -1;
+                                break;
+                            case DialogInterface.BUTTON_NEGATIVE:
+                                break;
+                        }
+                    }
+                };
 
         AlertDialog.Builder adb = new AlertDialog.Builder(this);
         adb.setTitle(buddy_uri);
@@ -589,11 +589,11 @@ public class SipMainActivity extends Activity
 
 
     /*
-    * === MyAppObserver ===
-    *
-    * As we cannot do UI from worker thread, the callbacks mostly just send
-    * a message to UI/main thread.
-    */
+     * === MyAppObserver ===
+     *
+     * As we cannot do UI from worker thread, the callbacks mostly just send
+     * a message to UI/main thread.
+     */
 
     public void notifyIncomingCall(MyCall call)
     {
@@ -657,3 +657,9 @@ public class SipMainActivity extends Activity
     /* === end of MyAppObserver ==== */
 
 }
+
+
+
+
+
+

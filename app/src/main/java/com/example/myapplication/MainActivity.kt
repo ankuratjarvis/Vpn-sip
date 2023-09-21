@@ -78,7 +78,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        registerActivityLifecycleCallbacks(lifecycleCallbackListener)
+//        registerActivityLifecycleCallbacks(lifecycleCallbackListener)
         checkPermissions()
         server = Server("bangalore.ovpn", Constants.VPN_USERNAME, Constants.VPN_PASSWORD)
         fragmentManager = supportFragmentManager
@@ -104,13 +104,13 @@ class MainActivity : AppCompatActivity() {
 
     private fun initListeners() {
         binding.startSipStack.setOnClickListener {
-            startPjSip()
-            /*if (binding.username.text.isNotEmpty() && binding.domain.text.isNotEmpty() && binding.password.text.isNotEmpty()) {
+//            startPjSip()
+            if (binding.username.text.isNotEmpty() && binding.domain.text.isNotEmpty() && binding.password.text.isNotEmpty()) {
                 startSip()
                 showToast("Starting SIP Stack")
             } else {
                 showToast("Please enter required Details")
-            }*/
+            }
         }
 
         binding.stopSIP.setOnClickListener {
@@ -282,7 +282,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun startSip() {
 
-        job.launch(Dispatchers.IO) {
+//        job.launch(Dispatchers.IO) {
             val userCred = UserCredentials(
                 binding.username.text.toString().trim(),
                 binding.domain.text.toString().trim(),
@@ -295,6 +295,7 @@ class MainActivity : AppCompatActivity() {
             sipStack.SetParameter("serveraddress", userCred.serverAddress)
             sipStack.SetParameter("username", userCred.username)
             sipStack.SetParameter("password", userCred.password)
+
             sipStack.Start()
 
             sipStack.SetNotificationListener(object : SIPNotificationListener() {
@@ -347,10 +348,10 @@ class MainActivity : AppCompatActivity() {
                               }
                           }*/
                         sipStack.Accept(e.getLine())
-                        job.launch(Dispatchers.Main) {
-                            showCallActiveFragment()
-
-                        }
+//                        job.launch(Dispatchers.Main) {
+//                            showCallActiveFragment()
+//
+//                        }
 
                     } else if (e.getStatus() == SIPNotification.Status.STATUS_CALL_CONNECT) {
                         binding.logTextView.DisplayLogs("Incoming call connected")
@@ -371,7 +372,7 @@ class MainActivity : AppCompatActivity() {
 
                 }
             })
-        }
+//        }
 
         binding.domain.isEnabled = false
         binding.username.isEnabled = false

@@ -16,8 +16,16 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-package com.example.myapplication.pjsip;
+package com.example.myapplication;
 
+
+import android.util.Log;
+
+import com.example.myapplication.utils.MyAccount;
+import com.example.myapplication.utils.MyAccountConfig;
+import com.example.myapplication.utils.MyAppObserver;
+import com.example.myapplication.utils.MyBuddy;
+import com.example.myapplication.utils.MyLogWriter;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -26,7 +34,7 @@ import org.pjsip.pjsua2.*;
 
 
 /* Interface to separate UI & engine a bit better */
-interface MyAppObserver
+/*interface MyAppObserver
 {
     abstract void notifyRegState(int code, String reason, long expiration);
     abstract void notifyIncomingCall(MyCall call);
@@ -34,20 +42,24 @@ interface MyAppObserver
     abstract void notifyCallMediaState(MyCall call);
     abstract void notifyBuddyState(MyBuddy buddy);
     abstract void notifyChangeNetwork();
-}
+}*/
 
-
+/*
 class MyLogWriter extends LogWriter
 {
     @Override
     public void write(LogEntry entry)
     {
+        *//**
+         * the below line of code threw Swig::DirectorException
+         *//*
+        SipActivity.getInstance().log(entry.getMsg());
         System.out.println(entry.getMsg());
     }
-}
+}*/
 
 
-class MyCall extends Call
+/*class MyCall extends Call
 {
     public VideoWindow vidWin;
     public VideoPreview vidPrev;
@@ -64,9 +76,9 @@ class MyCall extends Call
         try {
             CallInfo ci = getInfo();
             if (ci.getState() ==
-                pjsip_inv_state.PJSIP_INV_STATE_DISCONNECTED)
+                    pjsip_inv_state.PJSIP_INV_STATE_DISCONNECTED)
             {
-                MyApp.ep.utilLogWrite(3, "MyCall", this.dump(true, ""));
+                SipApp.ep.utilLogWrite(3, "MyCall", this.dump(true, ""));
             }
         } catch (Exception e) {
         }
@@ -74,7 +86,7 @@ class MyCall extends Call
         // Should not delete this call instance (self) in this context,
         // so the observer should manage this call instance deletion
         // out of this callback context.
-        MyApp.observer.notifyCallState(this);
+        SipApp.observer.notifyCallState(this);
     }
 
     @Override
@@ -92,39 +104,39 @@ class MyCall extends Call
         for (int i = 0; i < cmiv.size(); i++) {
             CallMediaInfo cmi = cmiv.get(i);
             if (cmi.getType() == pjmedia_type.PJMEDIA_TYPE_AUDIO &&
-                (cmi.getStatus() ==
-                        pjsua_call_media_status.PJSUA_CALL_MEDIA_ACTIVE ||
-                 cmi.getStatus() ==
-                        pjsua_call_media_status.PJSUA_CALL_MEDIA_REMOTE_HOLD))
+                    (cmi.getStatus() ==
+                            pjsua_call_media_status.PJSUA_CALL_MEDIA_ACTIVE ||
+                            cmi.getStatus() ==
+                                    pjsua_call_media_status.PJSUA_CALL_MEDIA_REMOTE_HOLD))
             {
                 // connect ports
                 try {
                     AudioMedia am = getAudioMedia(i);
-                    MyApp.ep.audDevManager().getCaptureDevMedia().
-                                                            startTransmit(am);
-                    am.startTransmit(MyApp.ep.audDevManager().
-                                     getPlaybackDevMedia());
+                    SipApp.ep.audDevManager().getCaptureDevMedia().
+                            startTransmit(am);
+                    am.startTransmit(SipApp.ep.audDevManager().
+                            getPlaybackDevMedia());
                 } catch (Exception e) {
                     System.out.println("Failed connecting media ports" +
-                                       e.getMessage());
+                            e.getMessage());
                     continue;
                 }
             } else if (cmi.getType() == pjmedia_type.PJMEDIA_TYPE_VIDEO &&
-                       cmi.getStatus() ==
+                    cmi.getStatus() ==
                             pjsua_call_media_status.PJSUA_CALL_MEDIA_ACTIVE &&
-                       cmi.getVideoIncomingWindowId() != pjsua2.INVALID_ID)
+                    cmi.getVideoIncomingWindowId() != pjsua2.INVALID_ID)
             {
                 vidWin = new VideoWindow(cmi.getVideoIncomingWindowId());
                 vidPrev = new VideoPreview(cmi.getVideoCapDev());
             }
         }
 
-        MyApp.observer.notifyCallMediaState(this);
+        SipApp.observer.notifyCallMediaState(this);
     }
-}
+}*/
 
 
-class MyAccount extends Account
+/*class MyAccount extends Account
 {
     public ArrayList<MyBuddy> buddyList = new ArrayList<MyBuddy>();
     public AccountConfig cfg;
@@ -137,7 +149,7 @@ class MyAccount extends Account
 
     public MyBuddy addBuddy(BuddyConfig bud_cfg)
     {
-        /* Create Buddy */
+        *//* Create Buddy *//*
         MyBuddy bud = new MyBuddy(bud_cfg);
         try {
             bud.create(this, bud_cfg);
@@ -151,7 +163,7 @@ class MyAccount extends Account
             if (bud_cfg.getSubscribe())
                 try {
                     bud.subscribePresence(true);
-            } catch (Exception e) {}
+                } catch (Exception e) {}
         }
 
         return bud;
@@ -173,8 +185,8 @@ class MyAccount extends Account
     @Override
     public void onRegState(OnRegStateParam prm)
     {
-        MyApp.observer.notifyRegState(prm.getCode(), prm.getReason(),
-                                      prm.getExpiration());
+        SipApp.observer.notifyRegState(prm.getCode(), prm.getReason(),
+                prm.getExpiration());
     }
 
     @Override
@@ -182,7 +194,7 @@ class MyAccount extends Account
     {
         System.out.println("======== Incoming call ======== ");
         MyCall call = new MyCall(this, prm.getCallId());
-        MyApp.observer.notifyIncomingCall(call);
+        SipApp.observer.notifyIncomingCall(call);
     }
 
     @Override
@@ -195,59 +207,59 @@ class MyAccount extends Account
         System.out.println("Mimetype : " + prm.getContentType());
         System.out.println("Body     : " + prm.getMsgBody());
     }
-}
+}*/
 
 
-class MyBuddy extends Buddy
-{
-    public BuddyConfig cfg;
-
-    MyBuddy(BuddyConfig config)
+    /*class MyBuddy extends Buddy
     {
-        super();
-        cfg = config;
-    }
+        public BuddyConfig cfg;
 
-    String getStatusText()
-    {
-        BuddyInfo bi;
-
-        try {
-            bi = getInfo();
-        } catch (Exception e) {
-            return "?";
+        MyBuddy(BuddyConfig config)
+        {
+            super();
+            cfg = config;
         }
 
-        String status = "";
-        if (bi.getSubState() == pjsip_evsub_state.PJSIP_EVSUB_STATE_ACTIVE) {
-            if (bi.getPresStatus().getStatus() ==
-                pjsua_buddy_status.PJSUA_BUDDY_STATUS_ONLINE)
-            {
-                status = bi.getPresStatus().getStatusText();
-                if (status == null || status.length()==0) {
-                    status = "Online";
-                }
-            } else if (bi.getPresStatus().getStatus() ==
-                       pjsua_buddy_status.PJSUA_BUDDY_STATUS_OFFLINE)
-            {
-                status = "Offline";
-            } else {
-                status = "Unknown";
+        String getStatusText()
+        {
+            BuddyInfo bi;
+
+            try {
+                bi = getInfo();
+            } catch (Exception e) {
+                return "?";
             }
+
+            String status = "";
+            if (bi.getSubState() == pjsip_evsub_state.PJSIP_EVSUB_STATE_ACTIVE) {
+                if (bi.getPresStatus().getStatus() ==
+                        pjsua_buddy_status.PJSUA_BUDDY_STATUS_ONLINE)
+                {
+                    status = bi.getPresStatus().getStatusText();
+                    if (status == null || status.length()==0) {
+                        status = "Online";
+                    }
+                } else if (bi.getPresStatus().getStatus() ==
+                        pjsua_buddy_status.PJSUA_BUDDY_STATUS_OFFLINE)
+                {
+                    status = "Offline";
+                } else {
+                    status = "Unknown";
+                }
+            }
+            return status;
         }
-        return status;
-    }
 
-    @Override
-    public void onBuddyState()
-    {
-        MyApp.observer.notifyBuddyState(this);
-    }
+        @Override
+        public void onBuddyState()
+        {
+            SipApp.observer.notifyBuddyState(this);
+        }
 
-}
+    }*/
 
 
-class MyAccountConfig
+/*class MyAccountConfig
 {
     public AccountConfig accCfg = new AccountConfig();
     public ArrayList<BuddyConfig> buddyCfgs = new ArrayList<BuddyConfig>();
@@ -278,16 +290,16 @@ class MyAccountConfig
             }
         } catch (Exception e) {}
     }
-}
+}*/
 
 
-class MyApp extends pjsua2 {
+public class SipApp extends pjsua2 {
     public static Endpoint ep = new Endpoint();
     public static MyAppObserver observer;
     public ArrayList<MyAccount> accList = new ArrayList<MyAccount>();
 
     private ArrayList<MyAccountConfig> accCfgs =
-                                          new ArrayList<MyAccountConfig>();
+            new ArrayList<MyAccountConfig>();
     private EpConfig epConfig = new EpConfig();
     private TransportConfig sipTpConfig = new TransportConfig();
     private String appDir;
@@ -313,20 +325,21 @@ class MyApp extends pjsua2 {
         /* Create endpoint */
         try {
             ep.libCreate();
+//            ep.libRegisterThread("sip");
         } catch (Exception e) {
-            return;
+            e.printStackTrace();
         }
 
 
         /* Load config */
         String configPath = appDir + "/" + configName;
         File f = new File(configPath);
-//        if (f.exists()) {
-//            loadConfig(configPath);
-//        } else {
-//            /* Set 'default' values */
-//            sipTpConfig.setPort(SIP_PORT);
-//        }
+       /* if (f.exists()) {
+            loadConfig(configPath);
+        } else {
+            *//* Set 'default' values *//*
+            sipTpConfig.setPort(SIP_PORT);
+        }*/
 
         /* Override log level setting */
         epConfig.getLogConfig().setLevel(LOG_LEVEL);
@@ -337,8 +350,8 @@ class MyApp extends pjsua2 {
         logWriter = new MyLogWriter();
         log_cfg.setWriter(logWriter);
         log_cfg.setDecor(log_cfg.getDecor() &
-                         ~(pj_log_decoration.PJ_LOG_HAS_CR |
-                         pj_log_decoration.PJ_LOG_HAS_NEWLINE));
+                ~(pj_log_decoration.PJ_LOG_HAS_CR |
+                        pj_log_decoration.PJ_LOG_HAS_NEWLINE));
 
         /* Write log to file (just uncomment whenever needed) */
         //String log_path = android.os.Environment.getExternalStorageDirectory().toString();
@@ -369,14 +382,14 @@ class MyApp extends pjsua2 {
         /* Create transports. */
         try {
             ep.transportCreate(pjsip_transport_type_e.PJSIP_TRANSPORT_UDP,
-                               sipTpConfig);
+                    sipTpConfig);
         } catch (Exception e) {
             System.out.println(e);
         }
 
         try {
             ep.transportCreate(pjsip_transport_type_e.PJSIP_TRANSPORT_TCP,
-                               sipTpConfig);
+                    sipTpConfig);
         } catch (Exception e) {
             System.out.println(e);
         }
@@ -384,7 +397,7 @@ class MyApp extends pjsua2 {
         try {
             sipTpConfig.setPort(SIP_PORT+1);
             ep.transportCreate(pjsip_transport_type_e.PJSIP_TRANSPORT_TLS,
-                               sipTpConfig);
+                    sipTpConfig);
         } catch (Exception e) {
             System.out.println(e);
         }
@@ -420,7 +433,7 @@ class MyApp extends pjsua2 {
         try {
             ep.libStart();
         } catch (Exception e) {
-            return;
+            e.printStackTrace();
         }
     }
 
@@ -446,21 +459,21 @@ class MyApp extends pjsua2 {
 
     private void loadConfig(String filename)
     {
-        JsonDocument json = new JsonDocument();
+        /*JsonDocument json = new JsonDocument();
 
         try {
-            /* Load file */
+            *//* Load file *//*
             json.loadFile(filename);
             ContainerNode root = json.getRootContainer();
 
-            /* Read endpoint config */
+            *//* Read endpoint config *//*
             epConfig.readObject(root);
 
-            /* Read transport config */
+            *//* Read transport config *//*
             ContainerNode tp_node = root.readContainer("SipTransport");
             sipTpConfig.readObject(tp_node);
 
-            /* Read account configs */
+            *//* Read account configs *//*
             accCfgs.clear();
             ContainerNode accs_node = root.readArray("accounts");
             while (accs_node.hasUnread()) {
@@ -472,10 +485,10 @@ class MyApp extends pjsua2 {
             System.out.println(e);
         }
 
-        /* Force delete json now, as I found that Java somehow destroys it
-        * after lib has been destroyed and from non-registered thread.
-        */
-        json.delete();
+        *//* Force delete json now, as I found that Java somehow destroys it
+         * after lib has been destroyed and from non-registered thread.
+         *//*
+        json.delete();*/
     }
 
     private void buildAccConfigs()
@@ -499,31 +512,31 @@ class MyApp extends pjsua2 {
 
     private void saveConfig(String filename)
     {
-        JsonDocument json = new JsonDocument();
+       /* JsonDocument json = new JsonDocument();
 
         try {
-            /* Write endpoint config */
+            *//* Write endpoint config *//*
             json.writeObject(epConfig);
 
-            /* Write transport config */
+            *//* Write transport config *//*
             ContainerNode tp_node = json.writeNewContainer("SipTransport");
             sipTpConfig.writeObject(tp_node);
 
-            /* Write account configs */
+            *//* Write account configs *//*
             buildAccConfigs();
             ContainerNode accs_node = json.writeNewArray("accounts");
             for (int i = 0; i < accCfgs.size(); i++) {
                 accCfgs.get(i).writeObject(accs_node);
             }
 
-            /* Save file */
+            *//* Save file *//*
             json.saveFile(filename);
         } catch (Exception e) {}
 
-        /* Force delete json now, as I found that Java somehow destroys it
-        * after lib has been destroyed and from non-registered thread.
-        */
-        json.delete();
+        *//* Force delete json now, as I found that Java somehow destroys it
+         * after lib has been destroyed and from non-registered thread.
+         *//*
+        json.delete();*/
     }
 
     public void handleNetworkChange()
@@ -543,21 +556,21 @@ class MyApp extends pjsua2 {
         saveConfig(configPath);
 
         /* Try force GC to avoid late destroy of PJ objects as they should be
-        * deleted before lib is destroyed.
-        */
-        Runtime.getRuntime().gc();
+         * deleted before lib is destroyed.
+         */
+//        Runtime.getRuntime().gc();
 
         /* Shutdown pjsua. Note that Endpoint destructor will also invoke
-        * libDestroy(), so this will be a test of double libDestroy().
-        */
+         * libDestroy(), so this will be a test of double libDestroy().
+         */
         try {
             ep.libDestroy();
         } catch (Exception e) {}
 
         /* Force delete Endpoint here, to avoid deletion from a non-
-        * registered thread (by GC?).
-        */
-        ep.delete();
-        ep = null;
+         * registered thread (by GC?).
+         */
+//        ep.delete();
+//        ep = null;
     }
 }
