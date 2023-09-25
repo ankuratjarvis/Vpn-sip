@@ -1,6 +1,7 @@
 package com.example.myapplication.common
 
 object Constants {
+
     const val SIP_USERNAME = "1000000099"
     const val SIP_DOMAIN = "103.168.211.98"
     const val SIP_PASSWORD = "info@79102#"
@@ -19,6 +20,8 @@ object Constants {
     const val CALL_RESPONSE_ACTION_KEY= "response_action_key"
     const val CALL_RECEIVE_ACTION= "receive_action"
     const val CALL_CANCEL_ACTION= "cancel_action"
+    const val IS_CALL_ACTIVE= "is_call_active"
+    const val SERVICE= "service"
 
 
 

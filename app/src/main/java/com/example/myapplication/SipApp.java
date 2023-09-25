@@ -32,276 +32,15 @@ import java.util.ArrayList;
 
 import org.pjsip.pjsua2.*;
 
-
-/* Interface to separate UI & engine a bit better */
-/*interface MyAppObserver
-{
-    abstract void notifyRegState(int code, String reason, long expiration);
-    abstract void notifyIncomingCall(MyCall call);
-    abstract void notifyCallState(MyCall call);
-    abstract void notifyCallMediaState(MyCall call);
-    abstract void notifyBuddyState(MyBuddy buddy);
-    abstract void notifyChangeNetwork();
-}*/
-
-/*
-class MyLogWriter extends LogWriter
-{
-    @Override
-    public void write(LogEntry entry)
-    {
-        *//**
-         * the below line of code threw Swig::DirectorException
-         *//*
-        SipActivity.getInstance().log(entry.getMsg());
-        System.out.println(entry.getMsg());
-    }
-}*/
-
-
-/*class MyCall extends Call
-{
-    public VideoWindow vidWin;
-    public VideoPreview vidPrev;
-
-    MyCall(MyAccount acc, int call_id)
-    {
-        super(acc, call_id);
-        vidWin = null;
-    }
-
-    @Override
-    public void onCallState(OnCallStateParam prm)
-    {
-        try {
-            CallInfo ci = getInfo();
-            if (ci.getState() ==
-                    pjsip_inv_state.PJSIP_INV_STATE_DISCONNECTED)
-            {
-                SipApp.ep.utilLogWrite(3, "MyCall", this.dump(true, ""));
-            }
-        } catch (Exception e) {
-        }
-
-        // Should not delete this call instance (self) in this context,
-        // so the observer should manage this call instance deletion
-        // out of this callback context.
-        SipApp.observer.notifyCallState(this);
-    }
-
-    @Override
-    public void onCallMediaState(OnCallMediaStateParam prm)
-    {
-        CallInfo ci;
-        try {
-            ci = getInfo();
-        } catch (Exception e) {
-            return;
-        }
-
-        CallMediaInfoVector cmiv = ci.getMedia();
-
-        for (int i = 0; i < cmiv.size(); i++) {
-            CallMediaInfo cmi = cmiv.get(i);
-            if (cmi.getType() == pjmedia_type.PJMEDIA_TYPE_AUDIO &&
-                    (cmi.getStatus() ==
-                            pjsua_call_media_status.PJSUA_CALL_MEDIA_ACTIVE ||
-                            cmi.getStatus() ==
-                                    pjsua_call_media_status.PJSUA_CALL_MEDIA_REMOTE_HOLD))
-            {
-                // connect ports
-                try {
-                    AudioMedia am = getAudioMedia(i);
-                    SipApp.ep.audDevManager().getCaptureDevMedia().
-                            startTransmit(am);
-                    am.startTransmit(SipApp.ep.audDevManager().
-                            getPlaybackDevMedia());
-                } catch (Exception e) {
-                    System.out.println("Failed connecting media ports" +
-                            e.getMessage());
-                    continue;
-                }
-            } else if (cmi.getType() == pjmedia_type.PJMEDIA_TYPE_VIDEO &&
-                    cmi.getStatus() ==
-                            pjsua_call_media_status.PJSUA_CALL_MEDIA_ACTIVE &&
-                    cmi.getVideoIncomingWindowId() != pjsua2.INVALID_ID)
-            {
-                vidWin = new VideoWindow(cmi.getVideoIncomingWindowId());
-                vidPrev = new VideoPreview(cmi.getVideoCapDev());
-            }
-        }
-
-        SipApp.observer.notifyCallMediaState(this);
-    }
-}*/
-
-
-/*class MyAccount extends Account
-{
-    public ArrayList<MyBuddy> buddyList = new ArrayList<MyBuddy>();
-    public AccountConfig cfg;
-
-    MyAccount(AccountConfig config)
-    {
-        super();
-        cfg = config;
-    }
-
-    public MyBuddy addBuddy(BuddyConfig bud_cfg)
-    {
-        *//* Create Buddy *//*
-        MyBuddy bud = new MyBuddy(bud_cfg);
-        try {
-            bud.create(this, bud_cfg);
-        } catch (Exception e) {
-            bud.delete();
-            bud = null;
-        }
-
-        if (bud != null) {
-            buddyList.add(bud);
-            if (bud_cfg.getSubscribe())
-                try {
-                    bud.subscribePresence(true);
-                } catch (Exception e) {}
-        }
-
-        return bud;
-    }
-
-    public void delBuddy(MyBuddy buddy)
-    {
-        buddyList.remove(buddy);
-        buddy.delete();
-    }
-
-    public void delBuddy(int index)
-    {
-        MyBuddy bud = buddyList.get(index);
-        buddyList.remove(index);
-        bud.delete();
-    }
-
-    @Override
-    public void onRegState(OnRegStateParam prm)
-    {
-        SipApp.observer.notifyRegState(prm.getCode(), prm.getReason(),
-                prm.getExpiration());
-    }
-
-    @Override
-    public void onIncomingCall(OnIncomingCallParam prm)
-    {
-        System.out.println("======== Incoming call ======== ");
-        MyCall call = new MyCall(this, prm.getCallId());
-        SipApp.observer.notifyIncomingCall(call);
-    }
-
-    @Override
-    public void onInstantMessage(OnInstantMessageParam prm)
-    {
-        System.out.println("======== Incoming pager ======== ");
-        System.out.println("From     : " + prm.getFromUri());
-        System.out.println("To       : " + prm.getToUri());
-        System.out.println("Contact  : " + prm.getContactUri());
-        System.out.println("Mimetype : " + prm.getContentType());
-        System.out.println("Body     : " + prm.getMsgBody());
-    }
-}*/
-
-
-    /*class MyBuddy extends Buddy
-    {
-        public BuddyConfig cfg;
-
-        MyBuddy(BuddyConfig config)
-        {
-            super();
-            cfg = config;
-        }
-
-        String getStatusText()
-        {
-            BuddyInfo bi;
-
-            try {
-                bi = getInfo();
-            } catch (Exception e) {
-                return "?";
-            }
-
-            String status = "";
-            if (bi.getSubState() == pjsip_evsub_state.PJSIP_EVSUB_STATE_ACTIVE) {
-                if (bi.getPresStatus().getStatus() ==
-                        pjsua_buddy_status.PJSUA_BUDDY_STATUS_ONLINE)
-                {
-                    status = bi.getPresStatus().getStatusText();
-                    if (status == null || status.length()==0) {
-                        status = "Online";
-                    }
-                } else if (bi.getPresStatus().getStatus() ==
-                        pjsua_buddy_status.PJSUA_BUDDY_STATUS_OFFLINE)
-                {
-                    status = "Offline";
-                } else {
-                    status = "Unknown";
-                }
-            }
-            return status;
-        }
-
-        @Override
-        public void onBuddyState()
-        {
-            SipApp.observer.notifyBuddyState(this);
-        }
-
-    }*/
-
-
-/*class MyAccountConfig
-{
-    public AccountConfig accCfg = new AccountConfig();
-    public ArrayList<BuddyConfig> buddyCfgs = new ArrayList<BuddyConfig>();
-
-    public void readObject(ContainerNode node)
-    {
-        try {
-            ContainerNode acc_node = node.readContainer("Account");
-            accCfg.readObject(acc_node);
-            ContainerNode buddies_node = acc_node.readArray("buddies");
-            buddyCfgs.clear();
-            while (buddies_node.hasUnread()) {
-                BuddyConfig bud_cfg = new BuddyConfig();
-                bud_cfg.readObject(buddies_node);
-                buddyCfgs.add(bud_cfg);
-            }
-        } catch (Exception e) {}
-    }
-
-    public void writeObject(ContainerNode node)
-    {
-        try {
-            ContainerNode acc_node = node.writeNewContainer("Account");
-            accCfg.writeObject(acc_node);
-            ContainerNode buddies_node = acc_node.writeNewArray("buddies");
-            for (int j = 0; j < buddyCfgs.size(); j++) {
-                buddyCfgs.get(j).writeObject(buddies_node);
-            }
-        } catch (Exception e) {}
-    }
-}*/
-
-
 public class SipApp extends pjsua2 {
-    public static Endpoint ep = new Endpoint();
+    public static Endpoint ep;
     public static MyAppObserver observer;
     public ArrayList<MyAccount> accList = new ArrayList<MyAccount>();
 
     private ArrayList<MyAccountConfig> accCfgs =
             new ArrayList<MyAccountConfig>();
-    private EpConfig epConfig = new EpConfig();
-    private TransportConfig sipTpConfig = new TransportConfig();
+    private EpConfig epConfig;
+    private TransportConfig sipTpConfig;
     private String appDir;
 
     /* Maintain reference to log writer to avoid premature cleanup by GC */
@@ -324,6 +63,9 @@ public class SipApp extends pjsua2 {
 
         /* Create endpoint */
         try {
+            ep = new Endpoint();
+            epConfig = new EpConfig();
+            sipTpConfig = new TransportConfig();
             ep.libCreate();
 //            ep.libRegisterThread("sip");
         } catch (Exception e) {
@@ -376,7 +118,7 @@ public class SipApp extends pjsua2 {
         try {
             ep.libInit(epConfig);
         } catch (Exception e) {
-            return;
+            Log.d("SipActivity","Exception occurred while initializing library"+e.getMessage());
         }
 
         /* Create transports. */
@@ -552,25 +294,30 @@ public class SipApp extends pjsua2 {
 
     public void deinit()
     {
-        String configPath = appDir + "/" + configName;
-        saveConfig(configPath);
-
-        /* Try force GC to avoid late destroy of PJ objects as they should be
+             /* Try force GC to avoid late destroy of PJ objects as they should be
          * deleted before lib is destroyed.
          */
-//        Runtime.getRuntime().gc();
 
         /* Shutdown pjsua. Note that Endpoint destructor will also invoke
          * libDestroy(), so this will be a test of double libDestroy().
          */
+
         try {
-            ep.libDestroy();
-        } catch (Exception e) {}
+            if(ep!=null){
+                ep.libDestroy();
+                ep.delete();
+                ep = null;
+                Runtime.getRuntime().gc();
+            }
+
+
+        } catch (Exception e) {
+            Log.d("SipActivity","Exception occurred while destroying PJSIP"+e.getMessage());
+        }
 
         /* Force delete Endpoint here, to avoid deletion from a non-
          * registered thread (by GC?).
          */
-//        ep.delete();
-//        ep = null;
+
     }
 }

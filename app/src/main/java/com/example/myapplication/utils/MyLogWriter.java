@@ -13,7 +13,9 @@ public class MyLogWriter extends LogWriter
         /**
          * the below line of code threw Swig::DirectorException
          */
-        SipActivity.getInstance().log(entry.getMsg());
-        System.out.println(entry.getMsg());
+        String message = entry.getMsg();
+
+        SipActivity.getInstance().log(message);
+        System.out.println(message);
     }
 }

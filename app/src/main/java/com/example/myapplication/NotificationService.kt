@@ -1,14 +1,14 @@
 package com.example.myapplication
 
+import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.app.Service
+import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.ApplicationInfo
-import android.media.AudioAttributes
-import android.media.AudioManager
-import android.net.Uri
 import android.os.Binder
 import android.os.Build
 import android.os.Bundle
@@ -16,14 +16,18 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Message
 import android.util.Log
+import android.view.View
 import android.widget.ListView
 import android.widget.SimpleAdapter
+import androidx.core.app.NotificationCompat
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.example.myapplication.common.Constants
 import com.example.myapplication.utils.MSG_TYPE
 import com.example.myapplication.utils.MyAccount
 import com.example.myapplication.utils.MyAppObserver
 import com.example.myapplication.utils.MyBuddy
 import com.example.myapplication.utils.MyCall
+import com.example.myapplication.utils.ServiceCallback
 import org.pjsip.pjsua2.AccountConfig
 import org.pjsip.pjsua2.AuthCredInfo
 import org.pjsip.pjsua2.CallInfo
@@ -33,9 +37,13 @@ import org.pjsip.pjsua2.pjsip_status_code
 import java.util.Objects
 
 
-class NotificationService : Service() , Handler.Callback, MyAppObserver {
-    private val CHANNEL_ID = "VoipChannel"
-    private val CHANNEL_NAME = "Voip Channel"
+class NotificationService : Service(), Handler.Callback, MyAppObserver {
+    private val SIP_CHANNEL_ID = "VoipChannel"
+    private val SIP_CHANNEL_NAME = "SIP Voip Channel"
+
+    private val SIP_CALL_CHANNEL_ID = "VoipCall"
+    private val SIP_CALL_CHANNEL_NAME = "Voip Call Channel"
+
     private val TAG = "NotificationService"
     var app: SipApp? = null
     var currentCall: MyCall? = null
@@ -46,56 +54,33 @@ class NotificationService : Service() , Handler.Callback, MyAppObserver {
     private var buddyListView: ListView? = null
     private var buddyListAdapter: SimpleAdapter? = null
     private var buddyListSelectedIdx = -1
-    var buddyList= mutableListOf<Map<String, String>>()
+    var buddyList = mutableListOf<Map<String, String>>()
     private var lastRegStatus = ""
     private val handler = Handler(this)
     var INSTANCE: NotificationService? = null
-    override fun onCreate() {
-        super.onCreate()
-        INSTANCE = this@NotificationService
+
+    val SIP_ACTIVE_NOTIFICATION_ID = 101
+    val ACTIVE_CALL_NOTIFICATION_ID = 102
+
+    private val mBinder = LocalBinder()
+
+    companion object {
+        var intance: NotificationService? = null
+        fun getInstance(): NotificationService? {
+            return intance
+        }
     }
+
+    private var serviceCallback: ServiceCallback? = null
+
     override fun onBind(p0: Intent?): IBinder? {
-        return null
+        return mBinder
     }
 
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        Log.d(TAG,"Inside on start command")
+        Log.d(TAG, "Inside on start command")
         initSIP(intent)
-        var data: Bundle? = null
-        var callStr: String? = null
-        if (intent != null && intent.extras != null) {
-            callStr = intent.getStringExtra(Constants.INCOMING_CALL)
-
-            /*   currentCall.answer(CallOpParam().apply {
-                   this.statusCode = pjsip_status_code.PJSIP_SC_OK
-               })*/
-        }
-        /*try {
-            val sipIntent = Intent(this, SipActivity::class.java)
-            sipIntent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-            val pendingIntent =
-                PendingIntent.getActivity(this, 12, sipIntent, PendingIntent.FLAG_IMMUTABLE)
-
-            createChannel()
-            var notificationBuilder: NotificationCompat.Builder?
-            notificationBuilder = NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentText("......................")SipActivity
-                .setContentTitle("Incoming Voice Call")
-                .setSmallIcon(R.drawable.ic_launcher_foreground)
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .setCategory(NotificationCompat.CATEGORY_CALL)
-                .setAutoCancel(true)
-                .setSound(Uri.parse("android.resource://" + applicationContext.packageName + "/" + R.raw.ringtone))
-                .setFullScreenIntent(pendingIntent, true)
-
-
-            var incomingCallNotification: Notification?
-            incomingCallNotification = notificationBuilder.build()
-            startForeground(120, incomingCallNotification)
-        } catch (e: Exception) {
-            Log.d("NotificationService", "Exception occurred in Notification Service${e.message}")
-        }*/
 
         return START_STICKY
     }
@@ -118,7 +103,7 @@ class NotificationService : Service() , Handler.Callback, MyAppObserver {
                 } catch (e: InterruptedException) {
                 }
             }
-                app?.init(this, filesDir.absolutePath)
+            app?.init(this, filesDir.absolutePath)
             if (app!!.accList.size == 0) {
                 accCfg = AccountConfig()
                 accCfg!!.idUri = "sip:localhost"
@@ -130,17 +115,11 @@ class NotificationService : Service() , Handler.Callback, MyAppObserver {
                 account = app?.accList?.get(0)!!
                 accCfg = account?.cfg
             }
-
-
-
-
-
-
-
-            dlgAccountSetting(id!!,proxy!!,username!!,password!!)
+            dlgAccountSetting(id!!, proxy!!, username!!, password!!)
         }
 
     }
+
     fun dlgAccountSetting(_id: String, _proxy: String, _username: String, _password: String) {
         val registrar = _proxy
         val proxy = _proxy
@@ -169,37 +148,57 @@ class NotificationService : Service() , Handler.Callback, MyAppObserver {
 
         /* Finally */lastRegStatus = ""
         account?.modify(accCfg)
+//        startForeground(SIP_ACTIVE_NOTIFICATION_ID, showSipActiveNotification())
     }
 
 
     fun createChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                CHANNEL_NAME,
+            val sipChannel = NotificationChannel(
+                SIP_CHANNEL_ID,
+                SIP_CHANNEL_NAME,
                 NotificationManager.IMPORTANCE_HIGH
             )
-            channel.description = "Call Notifications"
-            channel.setSound(
-                Uri.parse("android.resource://" + applicationContext.packageName + "/" + R.raw.ringtone),
-                AudioAttributes.Builder().setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                    .setLegacyStreamType(AudioManager.STREAM_RING)
-                    .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION).build()
+            val callChannel = NotificationChannel(
+                SIP_CALL_CHANNEL_ID,
+                SIP_CALL_CHANNEL_NAME,
+                NotificationManager.IMPORTANCE_HIGH
             )
+
+
+            sipChannel.description = "SIP Notifications"
+            callChannel.description = "SIP Call Notifications"
+            /* channel.setSound(
+                 Uri.parse("android.resource://" + applicationContext.packageName + "/" + R.raw.ringtone),
+                 AudioAttributes.Builder().setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                     .setLegacyStreamType(AudioManager.STREAM_RING)
+                     .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION).build()
+             )*/
+            val channelList = mutableListOf(sipChannel, callChannel)
             Objects.requireNonNull(
                 applicationContext.getSystemService(
                     NotificationManager::class.java
                 )
-            ).createNotificationChannel(channel)
+            ).createNotificationChannels(channelList)
         }
+    }
+
+    fun registerCallback(callback: ServiceCallback) {
+        serviceCallback = callback
+        Log.d(TAG, "Csllback Registered --->$serviceCallback")
+
     }
 
     override fun handleMessage(m: Message): Boolean {
         if (m.what == 0) {
             app?.deinit()
+            app = null;
+
 //            finish();
-//            Runtime.getRuntime().gc();
+            Runtime.getRuntime().gc();
 //            android.os.Process.killProcess(android.os.Process.myPid());
+//            stopNotificationService()
+
         } else if (m.what == MSG_TYPE.CALL_STATE) {
             val ci = m.obj as CallInfo
             if (currentCall == null || ci == null || ci.id != currentCall?.id) {
@@ -233,7 +232,7 @@ class NotificationService : Service() , Handler.Callback, MyAppObserver {
             /* Update buddy status text, if buddy is valid and
              * the buddy lists in account and UI are sync-ed.
              */if (idx!! >= 0 && account?.buddyList?.size == buddyList!!.size) {
-                buddyList.add(idx,mapOf("status" to buddy.statusText))
+                buddyList.add(idx, mapOf("status" to buddy.statusText))
 //                !![idx].put("status", buddy.statusText)
                 buddyListAdapter!!.notifyDataSetChanged()
                 // TODO: selection color/mark is gone after this,
@@ -285,19 +284,44 @@ class NotificationService : Service() , Handler.Callback, MyAppObserver {
         return true
     }
 
+    private fun stopNotificationService() {
+//        clearActiveSipNotification()
+       serviceCallback?.stopService()
+
+
+    }
+
+    fun hangupCall() {
+        val prm = CallOpParam()
+        prm.statusCode = pjsip_status_code.PJSIP_SC_DECLINE
+        try {
+            currentCall?.hangup(prm)
+            serviceCallback?.onAnswer(false)
+            clearActiveCallNotification()
+        } catch (e: java.lang.Exception) {
+            Log.d(TAG, "Exception occured While Call Hangup${e.message}")
+        }
+    }
+
+    fun stopSip() {
+        val message = Message.obtain(handler, 0)
+        message.sendToTarget()
+
+    }
+
     private fun showCallActivity() {
-        Log.d("SERVICE-->","Incoming call.........")
+        Log.d("SERVICE-->", "Incoming call.........")
         val prm = CallOpParam()
         prm.statusCode = pjsip_status_code.PJSIP_SC_OK
         try {
             currentCall?.answer(prm)
-//            LocalBroadcastManager.getInstance(this).sendBroadcast()
-//            activeCallView.setVisibility(View.VISIBLE)
-//            logTextView.setVisibility(View.GONE)
-            val b = Bundle()
 
-            /* foregroundServiceIntent.putExtra(Constants.INCOMING_CALL,"pick_up");
-                startService(foregroundServiceIntent);*/
+            serviceCallback?.onAnswer(true)
+
+            val incomingCallNotification: Notification = showCallActiveNotification()
+            startForeground(ACTIVE_CALL_NOTIFICATION_ID, incomingCallNotification)
+
+
         } catch (e: Exception) {
             println(e.message)
         }
@@ -345,12 +369,67 @@ class NotificationService : Service() , Handler.Callback, MyAppObserver {
     override fun notifyChangeNetwork() {
 //        TODO("Not yet implemented")
     }
+
+    fun showSipActiveNotification(): Notification {
+        val sipIntent = Intent(this, SipActivity::class.java)
+        sipIntent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+        val pendingIntent =
+            PendingIntent.getActivity(this, 12, sipIntent, PendingIntent.FLAG_IMMUTABLE)
+
+        createChannel()
+
+        var notificationBuilder: NotificationCompat.Builder?
+        notificationBuilder = NotificationCompat.Builder(this, SIP_CHANNEL_ID)
+            .setContentText("")
+            .setContentTitle("SIP is Active")
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+            .setAutoCancel(true)
+//                .setSound(Uri.parse("android.resource://" + applicationContext.packageName + "/" + R.raw.ringtone))
+        return notificationBuilder.build()
+    }
+
+    fun showCallActiveNotification(): Notification {
+        val sipIntent = Intent(this, SipActivity::class.java)
+        sipIntent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+        val pendingIntent =
+            PendingIntent.getActivity(this, 12, sipIntent, PendingIntent.FLAG_IMMUTABLE)
+        createChannel()
+        var notificationBuilder: NotificationCompat.Builder?
+        notificationBuilder = NotificationCompat.Builder(this, SIP_CALL_CHANNEL_ID)
+            .setContentText("")
+            .setContentTitle("Incoming Voice Call")
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_CALL)
+            .setAutoCancel(true)
+//                .setSound(Uri.parse("android.resource://" + applicationContext.packageName + "/" + R.raw.ringtone))
+            .setFullScreenIntent(pendingIntent,true)
+        return notificationBuilder.build()
+    }
+
+    fun clearActiveCallNotification() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            stopForeground(STOP_FOREGROUND_REMOVE)
+        }
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.cancel(ACTIVE_CALL_NOTIFICATION_ID)
+    }
+
+    fun clearActiveSipNotification() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            stopForeground(STOP_FOREGROUND_REMOVE)
+        }
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+        notificationManager.cancel(SIP_ACTIVE_NOTIFICATION_ID)
+
+    }
+
     inner class LocalBinder : Binder() {
-       fun getInstance():NotificationService?{
-           if(INSTANCE!=null){
-               return INSTANCE
-           }
-            return null
+        fun getInstance(): NotificationService {
+            return this@NotificationService
         }
     }
 }

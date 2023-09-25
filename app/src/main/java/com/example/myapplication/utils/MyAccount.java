@@ -68,9 +68,11 @@ public class MyAccount extends Account
     public void onIncomingCall(OnIncomingCallParam prm)
     {
         System.out.println("======== Incoming call ======== ");
+        System.out.println("======== Incoming call ======== "+prm.getCallId());
         MyCall call = new MyCall(this, prm.getCallId());
         SipApp.observer.notifyIncomingCall(call);
     }
+
 
     @Override
     public void onInstantMessage(OnInstantMessageParam prm)
