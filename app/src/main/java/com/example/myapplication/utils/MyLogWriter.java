@@ -15,7 +15,7 @@ public class MyLogWriter extends LogWriter
          */
         String message = entry.getMsg();
 
-        SipActivity.getInstance().log(message);
+        SipActivity.instance.log(message);
         System.out.println(message);
     }
 }

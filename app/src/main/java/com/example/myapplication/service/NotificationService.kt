@@ -1,4 +1,4 @@
-package com.example.myapplication
+package com.example.myapplication.service
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -11,17 +11,17 @@ import android.content.IntentFilter
 import android.content.pm.ApplicationInfo
 import android.os.Binder
 import android.os.Build
-import android.os.Bundle
 import android.os.Handler
 import android.os.IBinder
 import android.os.Message
 import android.util.Log
-import android.view.View
 import android.widget.ListView
 import android.widget.SimpleAdapter
 import androidx.core.app.NotificationCompat
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
-import com.example.myapplication.common.Constants
+import com.example.myapplication.R
+import com.example.myapplication.SipActivecall
+import com.example.myapplication.SipActivity
+import com.example.myapplication.SipApp
 import com.example.myapplication.utils.MSG_TYPE
 import com.example.myapplication.utils.MyAccount
 import com.example.myapplication.utils.MyAppObserver
@@ -64,12 +64,6 @@ class NotificationService : Service(), Handler.Callback, MyAppObserver {
 
     private val mBinder = LocalBinder()
 
-    companion object {
-        var intance: NotificationService? = null
-        fun getInstance(): NotificationService? {
-            return intance
-        }
-    }
 
     private var serviceCallback: ServiceCallback? = null
 
@@ -210,9 +204,15 @@ class NotificationService : Service(), Handler.Callback, MyAppObserver {
                 val m2 = Message.obtain(SipActivecall.handler_, MSG_TYPE.CALL_STATE, ci)
                 m2.sendToTarget()
             }
+
+            Log.d(TAG,"Call State----> ${ci.state}")
             if (ci.state == pjsip_inv_state.PJSIP_INV_STATE_DISCONNECTED) {
-                currentCall?.delete()
-                currentCall = null
+                if(currentCall!=null){
+                    currentCall?.delete()
+                    currentCall = null
+                    hangupCall()
+                }
+
             }
         } else if (m.what == MSG_TYPE.CALL_MEDIA_STATE) {
 
@@ -243,7 +243,9 @@ class NotificationService : Service(), Handler.Callback, MyAppObserver {
                 //                                   buddyListView.
                 //                  getItemIdAtPosition(buddyListSelectedIdx));
 
-                /* Return back Call activity */notifyCallState(currentCall)
+                /* Return back Call activity */
+
+                notifyCallState(currentCall)
             }
         } else if (m.what == MSG_TYPE.REG_STATE) {
             val msg_str = m.obj as String
@@ -283,7 +285,9 @@ class NotificationService : Service(), Handler.Callback, MyAppObserver {
 
         return true
     }
-
+    public fun notifyCallState(){
+        notifyCallState(currentCall)
+    }
     private fun stopNotificationService() {
 //        clearActiveSipNotification()
        serviceCallback?.stopService()
@@ -326,7 +330,11 @@ class NotificationService : Service(), Handler.Callback, MyAppObserver {
             println(e.message)
         }
     }
+    fun muteCall(){
 
+    // Mute the call
+
+    }
     override fun notifyRegState(code: Int, reason: String?, expiration: Long) {
         var msg_str = ""
         msg_str += if (expiration == 0L) "Unregistration" else "Registration"
@@ -343,6 +351,7 @@ class NotificationService : Service(), Handler.Callback, MyAppObserver {
     }
 
     override fun notifyCallState(call: MyCall?) {
+
         if (currentCall == null || call!!.id != currentCall?.id) return
 
         var ci: CallInfo? = null

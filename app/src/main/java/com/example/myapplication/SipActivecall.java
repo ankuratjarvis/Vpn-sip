@@ -43,9 +43,9 @@ class VideoPreviewHandler implements SurfaceHolder.Callback
 
     public void updateVideoPreview(SurfaceHolder holder)
     {
-        if (SipActivity.currentCall != null &&
-                SipActivity.currentCall.vidWin != null &&
-                SipActivity.currentCall.vidPrev != null)
+        if (SipActivity.Companion.getCurrentCall() != null &&
+                SipActivity.Companion.getCurrentCall().vidWin != null &&
+                SipActivity.Companion.getCurrentCall().vidPrev != null)
         {
             if (videoPreviewActive) {
                 VideoWindowHandle vidWH = new VideoWindowHandle();
@@ -53,13 +53,13 @@ class VideoPreviewHandler implements SurfaceHolder.Callback
                 VideoPreviewOpParam vidPrevParam = new VideoPreviewOpParam();
                 vidPrevParam.setWindow(vidWH);
                 try {
-                    SipActivity.currentCall.vidPrev.start(vidPrevParam);
+                    SipActivity.Companion.getCurrentCall().vidPrev.start(vidPrevParam);
                 } catch (Exception e) {
                     System.out.println(e);
                 }
             } else {
                 try {
-                    SipActivity.currentCall.vidPrev.stop();
+                    SipActivity.Companion.getCurrentCall().vidPrev.stop();
                 } catch (Exception e) {
                     System.out.println(e);
                 }
@@ -83,7 +83,7 @@ class VideoPreviewHandler implements SurfaceHolder.Callback
     public void surfaceDestroyed(SurfaceHolder holder)
     {
         try {
-            SipActivity.currentCall.vidPrev.stop();
+            SipActivity.Companion.getCurrentCall().vidPrev.stop();
         } catch (Exception e) {
             System.out.println(e);
         }
@@ -114,8 +114,8 @@ public class SipActivecall extends Activity
         Button buttonShowPreview = (Button)
                 findViewById(com.example.myapplication.R.id.buttonShowPreview);
 
-        if (SipActivity.currentCall == null ||
-                SipActivity.currentCall.vidWin == null)
+        if (SipActivity.Companion.getCurrentCall() == null ||
+                SipActivity.Companion.getCurrentCall().vidWin == null)
         {
             surfaceInVideo.setVisibility(View.GONE);
             buttonShowPreview.setVisibility(View.GONE);
@@ -125,9 +125,9 @@ public class SipActivecall extends Activity
         surfacePreview.getHolder().addCallback(previewHandler);
 
         handler_ = handler;
-        if (SipActivity.currentCall != null) {
+        if (SipActivity.Companion.getCurrentCall() != null) {
             try {
-                lastCallInfo = SipActivity.currentCall.getInfo();
+                lastCallInfo = SipActivity.Companion.getCurrentCall().getInfo();
                 updateCallState(lastCallInfo);
             } catch (Exception e) {
                 System.out.println(e);
@@ -168,9 +168,9 @@ public class SipActivecall extends Activity
                 orient = pjmedia_orient.PJMEDIA_ORIENT_UNKNOWN;
         }
 
-        if (SipApp.ep != null && SipActivity.account != null) {
+        if (SipApp.ep != null && SipActivity.Companion.getCurrentCall() != null) {
             try {
-                AccountConfig cfg = SipActivity.account.cfg;
+                AccountConfig cfg = SipActivity.Companion.getAccount().cfg;
                 int cap_dev = cfg.getVideoConfig().getDefaultCaptureDevice();
                 SipApp.ep.vidDevManager().setCaptureOrient(cap_dev, orient,
                         true);
@@ -189,9 +189,9 @@ public class SipActivecall extends Activity
 
     private void updateVideoWindow(boolean show)
     {
-        if (SipActivity.currentCall != null &&
-                SipActivity.currentCall.vidWin != null &&
-                SipActivity.currentCall.vidPrev != null)
+        if (SipActivity.Companion.getCurrentCall() != null &&
+                SipActivity.Companion.getCurrentCall().vidWin != null &&
+                SipActivity.Companion.getCurrentCall().vidPrev != null)
         {
             SurfaceView surfaceInVideo = (SurfaceView)
                     findViewById(com.example.myapplication.R.id.surfaceIncomingVideo);
@@ -204,7 +204,7 @@ public class SipActivecall extends Activity
                 vidWH.getHandle().setWindow(null);
             }
             try {
-                SipActivity.currentCall.vidWin.setWindow(vidWH);
+                SipActivity.Companion.getCurrentCall().vidWin.setWindow(vidWH);
             } catch (Exception e) {
                 System.out.println(e);
             }
@@ -230,7 +230,7 @@ public class SipActivecall extends Activity
         CallOpParam prm = new CallOpParam();
         prm.setStatusCode(pjsip_status_code.PJSIP_SC_OK);
         try {
-            SipActivity.currentCall.answer(prm);
+            SipActivity.Companion.getCurrentCall().answer(prm);
         } catch (Exception e) {
             System.out.println(e);
         }
@@ -243,11 +243,11 @@ public class SipActivecall extends Activity
         handler_ = null;
         finish();
 
-        if (SipActivity.currentCall != null) {
+        if (SipActivity.Companion.getCurrentCall() != null) {
             CallOpParam prm = new CallOpParam();
             prm.setStatusCode(pjsip_status_code.PJSIP_SC_DECLINE);
             try {
-                SipActivity.currentCall.hangup(prm);
+                SipActivity.Companion.getCurrentCall().hangup(prm);
             } catch (Exception e) {
                 System.out.println(e);
             }
@@ -304,7 +304,7 @@ public class SipActivecall extends Activity
 
         } else if (m.what == MSG_TYPE.CALL_MEDIA_STATE) {
 
-            if (SipActivity.currentCall.vidWin != null) {
+            if (SipActivity.Companion.getCurrentCall().vidWin != null) {
                 /* Set capture orientation according to current
                  * device orientation.
                  */

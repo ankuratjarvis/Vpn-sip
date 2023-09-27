@@ -22,6 +22,7 @@ object Constants {
     const val CALL_CANCEL_ACTION= "cancel_action"
     const val IS_CALL_ACTIVE= "is_call_active"
     const val SERVICE= "service"
+    const val IS_VPN_ACTIVE= "is_vpn_active"
 
 
 

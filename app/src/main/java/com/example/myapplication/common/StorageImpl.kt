@@ -22,5 +22,9 @@ class StorageImpl(val context: Context?):Storage {
       editor?.clear()?.apply()
     }
 
+    override fun delete(key: String) {
+        editor?.remove(key)?.apply()
+    }
+
 
 }

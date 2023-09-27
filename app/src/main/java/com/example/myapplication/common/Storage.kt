@@ -5,4 +5,5 @@ interface Storage {
     fun   readData (key:String):Boolean?
 
     fun clearData()
+    fun delete(key:String)
 }
