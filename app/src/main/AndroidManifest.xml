@@ -127,7 +127,7 @@
             </intent-filter>
         </service>
         <service
-            android:name=".NotificationService"
+            android:name=".service.NotificationService"
             android:foregroundServiceType="microphone"
 
             />
