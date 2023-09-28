@@ -1,6 +1,7 @@
 package com.example.myapplication
 
 import android.Manifest
+import android.R.attr.data
 import android.app.Activity
 import android.app.AlertDialog
 import android.content.BroadcastReceiver
@@ -10,9 +11,8 @@ import android.content.DialogInterface
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.ServiceConnection
-import android.content.pm.PackageManager
+import android.net.Uri
 import android.net.VpnService
-import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
 import android.os.RemoteException
@@ -23,12 +23,11 @@ import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.RelativeLayout
+import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.animation.core.animateIntSizeAsState
-import androidx.core.app.ActivityCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.example.myapplication.common.Constants
 import com.example.myapplication.common.Storage
@@ -42,21 +41,16 @@ import com.example.myapplication.utils.ServiceCallback
 import com.karumi.dexter.Dexter
 import com.karumi.dexter.MultiplePermissionsReport
 import com.karumi.dexter.PermissionToken
-import com.karumi.dexter.listener.PermissionDeniedResponse
-import com.karumi.dexter.listener.PermissionGrantedResponse
 import com.karumi.dexter.listener.PermissionRequest
 import com.karumi.dexter.listener.multi.MultiplePermissionsListener
-import com.karumi.dexter.listener.single.PermissionListener
 import de.blinkt.openvpn.OpenVpnApi
 import de.blinkt.openvpn.core.OpenVPNService
 import de.blinkt.openvpn.core.OpenVPNThread
 import de.blinkt.openvpn.core.VpnStatus
-import org.pjsip.pjsua2.CallOpParam
-import org.pjsip.pjsua2.pjsip_status_code
 import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
-import java.security.Permission
+
 
 class SipActivity : Activity(), ServiceCallback {
     private var myService: NotificationService? = null
@@ -71,14 +65,19 @@ class SipActivity : Activity(), ServiceCallback {
     private lateinit var stopSipStack: Button
     private lateinit var endCall: Button
     lateinit var accDialog: ImageButton
+    lateinit var scrollView: ScrollView
+    lateinit var loadVpnFile: ImageView
     private var activeCallView: RelativeLayout? = null
     private var server: Server? = null
     lateinit var logTextView: TextView
     private var foregroundServiceIntent: Intent? = null
     private var storage: Storage? = null
-
+    private var fileUri: Uri? = null
     private val permissionList =
-        arrayListOf(Manifest.permission.RECORD_AUDIO/*,Manifest.permission.BIND_VPN_SERVICE,Manifest.permission.CALL_PHONE*/)
+        arrayListOf(
+            Manifest.permission.RECORD_AUDIO,
+            Manifest.permission.READ_EXTERNAL_STORAGE/*,Manifest.permission.BIND_VPN_SERVICE,Manifest.permission.CALL_PHONE*/
+        )
 
 
     private var isServiceRunning: Boolean = false
@@ -114,26 +113,37 @@ class SipActivity : Activity(), ServiceCallback {
 
         initViews()
         storage = StorageImpl(this)
-//        storage!!.delete(Constants.IS_VPN_ACTIVE)
+//        storage!!.clearIsServiceRunning()
+//        storage!!.clearIsCallActive()
         foregroundServiceIntent = Intent(this, NotificationService::class.java)
-        isServiceRunning()
+        setStopAndStartSipDisabled(false)
+        if (storage!!.readFileUri() != null) {
+            fileUri = Uri.parse(storage!!.readFileUri())
+        } else {
+            fileUri = null
+            vpnBtn.isEnabled = false
+        }
+
+        isVpnServiceRunning()
 
         if (java.lang.Boolean.TRUE == storage!!.readData(Constants.SERVICE)) {
             isServiceRunning = true
+            setStopAndStartSipDisabled(true)
+
+            bindService(foregroundServiceIntent!!, serviceConnection, BIND_AUTO_CREATE)
+
         }
         if (java.lang.Boolean.TRUE == storage!!.readData(Constants.IS_CALL_ACTIVE)) {
-            bindService(foregroundServiceIntent!!, serviceConnection, BIND_AUTO_CREATE)
             isCallActive = true
-            storage!!.clearData()
+            storage!!.clearIsCallActive()
+            storage!!.clearIsServiceRunning()
             onAnswer(true)
         } else {
+
             isCallActive = false
             onAnswer(false)
         }
 
-        if (isServiceRunning) {
-            setStopAndStartSipDisabled(false)
-        }
 
     }
 
@@ -151,6 +161,8 @@ class SipActivity : Activity(), ServiceCallback {
         accDialog = findViewById(R.id.buttonEditBuddy)
         activeCallView = findViewById(R.id.active_call_Container)
         endCall = findViewById(R.id.endCallButton)
+        loadVpnFile = findViewById(R.id.load_vpn_file)
+        scrollView = findViewById(R.id.log_container)
 
         logTextView.movementMethod = ScrollingMovementMethod()
 
@@ -168,6 +180,7 @@ class SipActivity : Activity(), ServiceCallback {
         stopSipStack.setOnClickListener {
             if (isServiceRunning) {
                 myService!!.stopSip()
+                isServiceRunning = false
                 setStopAndStartSipDisabled(false)
             } else {
                 showToast("Service Not Active Yet...!")
@@ -175,10 +188,14 @@ class SipActivity : Activity(), ServiceCallback {
         }
         endCall.setOnClickListener {
             if (myService != null) {
-                myService!!.notifyCallState()
+                myService!!.hangupCall()
             }
         }
         accDialog.setOnClickListener { dlgAccountSetting() }
+
+        loadVpnFile.setOnClickListener {
+            fileChooser()
+        }
 
     }
 
@@ -278,7 +295,7 @@ class SipActivity : Activity(), ServiceCallback {
         ad.show()
     }
 
-    private fun isServiceRunning() {
+    private fun isVpnServiceRunning() {
         setStatus(OpenVPNService.getStatus())
     }
 
@@ -310,13 +327,15 @@ class SipActivity : Activity(), ServiceCallback {
 
     private fun startVpn() {
         server = Server("bangalore.ovpn", Constants.VPN_USERNAME, Constants.VPN_PASSWORD)
-        isServiceRunning()
+        isVpnServiceRunning()
         VpnStatus.initLogCache(cacheDir)
         try {
             // .ovpn file
-            val conf = assets.open(server!!.ovpn)
-            Log.d("Sip Fragment", "File name----> \${server.ovpn}")
-            val isr = InputStreamReader(conf)
+//            val fis = FileInputStream(fileUri)
+
+            val ois = contentResolver.openInputStream(fileUri!!)
+//            val conf = assets.open(server!!.ovpn)
+            val isr = InputStreamReader(ois)
             val br = BufferedReader(isr)
             val config = StringBuilder()
             var line: String?
@@ -330,10 +349,10 @@ class SipActivity : Activity(), ServiceCallback {
                 this, config.toString(), "India", server!!.username, server!!.password
             )
 
-
             // Update log
 //            logTV.setText("Connecting...");
             vpnStart = true
+            ois?.close()
         } catch (e: IOException) {
             Log.d(TAG, "Exception---> " + e.message)
         } catch (e: RemoteException) {
@@ -407,7 +426,25 @@ class SipActivity : Activity(), ServiceCallback {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (resultCode == RESULT_OK) {
+        if (resultCode == RESULT_OK && requestCode == 111) {
+
+            if (data.data?.path?.endsWith(".ovpn")!!) {
+                fileUri = data.data
+                vpnBtn.isEnabled = true
+                val takeFlags: Int = (data.flags
+                        and (Intent.FLAG_GRANT_READ_URI_PERMISSION
+                        or Intent.FLAG_GRANT_WRITE_URI_PERMISSION))
+
+                contentResolver.takePersistableUriPermission(
+                    fileUri!!,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+
+            } else {
+                showToast("Please load ovpn file only")
+            }
+            Log.d(TAG, "File Path --->${fileUri}")
+        } else if (resultCode == RESULT_OK) {
 
             //Permission granted, start the VPN
             startVpn()
@@ -553,13 +590,25 @@ class SipActivity : Activity(), ServiceCallback {
     """.trimIndent()
             )
         }
+        scrollView.post {
+            scrollView.fullScroll(ScrollView.FOCUS_DOWN)
+        }
+    }
+
+    private fun fileChooser() {
+        val FILE_REQ_CODE = 111
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "*/*"
+        }
+        startActivityForResult(intent, FILE_REQ_CODE)
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        Log.d(TAG,"kj sjsjdjkjkjkjkjdfkjkj kj")
-
-
+        if (vpnStart && fileUri != null) {
+            storage!!.saveData(Constants.FILE_URI, fileUri.toString())
+        }
         if (isCallActive) {
             storage!!.saveData(Constants.IS_CALL_ACTIVE, true)
         } else {
@@ -570,7 +619,8 @@ class SipActivity : Activity(), ServiceCallback {
             unbindService(serviceConnection)
         }
         if (!vpnStart && !isCallActive && !isServiceRunning) {
-            storage!!.clearData()
+            storage!!.clearIsCallActive()
+            storage!!.clearIsServiceRunning()
 
         }
     }

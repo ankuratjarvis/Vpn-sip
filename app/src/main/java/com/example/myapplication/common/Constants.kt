@@ -23,6 +23,7 @@ object Constants {
     const val IS_CALL_ACTIVE= "is_call_active"
     const val SERVICE= "service"
     const val IS_VPN_ACTIVE= "is_vpn_active"
+    const val FILE_URI= "file_uri"
 
 
 

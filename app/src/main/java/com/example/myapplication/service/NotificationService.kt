@@ -213,7 +213,13 @@ class NotificationService : Service(), Handler.Callback, MyAppObserver {
                     hangupCall()
                 }
 
-            }
+            }/*else if(ci.state == pjsip_inv_state.PJSIP_INV_STATE_CONFIRMED){
+                if(currentCall!=null){
+                    currentCall?.delete()
+                    currentCall = null
+                    hangupCall()
+                }
+            }*/
         } else if (m.what == MSG_TYPE.CALL_MEDIA_STATE) {
 
             /* Forward the message to CallActivity */

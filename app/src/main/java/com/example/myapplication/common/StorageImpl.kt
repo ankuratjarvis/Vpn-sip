@@ -11,11 +11,25 @@ class StorageImpl(val context: Context?):Storage {
     override fun  saveData(key: String, value: Any) {
         when(value){
             is Boolean -> editor?.putBoolean(key,value)?.apply()
+            is String -> editor?.putString(key,value)?.apply()
         }
     }
 
     override fun  readData(key: String): Boolean? {
        return pref?.getBoolean(key,false)
+    }
+
+    override fun readFileUri(): String? {
+        return pref?.getString(Constants.FILE_URI,null)
+    }
+
+    override fun clearIsCallActive() {
+        editor?.remove(Constants.IS_CALL_ACTIVE)?.apply()
+
+    }
+
+    override fun clearIsServiceRunning() {
+        editor?.remove(Constants.SERVICE)?.apply()
     }
 
     override fun clearData() {
