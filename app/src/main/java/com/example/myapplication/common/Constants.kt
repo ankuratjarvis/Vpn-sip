@@ -11,6 +11,7 @@ object Constants {
     const val VPN_AGENT_USERNAME = "0603441511147"
     const val VPN_AGENT_PASSWORD = "c9Bq!8RHPh"
     const val VPN_AGENT_DOMAIN = "sip:sip-user.ttsl.tel"
+    const val DOMAIN = "sip-user.ttsl.tel"
     const val VPN_DOMAIN_ID = "sip:$VPN_AGENT_USERNAME@sip-user.ttsl.tel"
 
     const val SIP_DOMAIN_ID = "sip:${SIP_USERNAME}@103.168.211.98"

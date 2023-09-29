@@ -205,9 +205,9 @@ class NotificationService : Service(), Handler.Callback, MyAppObserver {
                 m2.sendToTarget()
             }
 
-            Log.d(TAG,"Call State----> ${ci.state}")
+            Log.d(TAG, "Call State----> ${ci.state}")
             if (ci.state == pjsip_inv_state.PJSIP_INV_STATE_DISCONNECTED) {
-                if(currentCall!=null){
+                if (currentCall != null) {
                     currentCall?.delete()
                     currentCall = null
                     hangupCall()
@@ -291,12 +291,14 @@ class NotificationService : Service(), Handler.Callback, MyAppObserver {
 
         return true
     }
-    public fun notifyCallState(){
+
+    public fun notifyCallState() {
         notifyCallState(currentCall)
     }
+
     private fun stopNotificationService() {
 //        clearActiveSipNotification()
-       serviceCallback?.stopService()
+        serviceCallback?.stopService()
 
 
     }
@@ -331,16 +333,19 @@ class NotificationService : Service(), Handler.Callback, MyAppObserver {
             val incomingCallNotification: Notification = showCallActiveNotification()
             startForeground(ACTIVE_CALL_NOTIFICATION_ID, incomingCallNotification)
 
-
+            Thread.sleep(5000L)
+            clearActiveCallNotification()
         } catch (e: Exception) {
             println(e.message)
         }
     }
-    fun muteCall(){
 
-    // Mute the call
+    fun muteCall() {
+
+        // Mute the call
 
     }
+
     override fun notifyRegState(code: Int, reason: String?, expiration: Long) {
         var msg_str = ""
         msg_str += if (expiration == 0L) "Unregistration" else "Registration"
@@ -420,7 +425,7 @@ class NotificationService : Service(), Handler.Callback, MyAppObserver {
             .setCategory(NotificationCompat.CATEGORY_CALL)
             .setAutoCancel(true)
 //                .setSound(Uri.parse("android.resource://" + applicationContext.packageName + "/" + R.raw.ringtone))
-            .setFullScreenIntent(pendingIntent,true)
+            .setFullScreenIntent(pendingIntent, true)
         return notificationBuilder.build()
     }
 
@@ -428,7 +433,8 @@ class NotificationService : Service(), Handler.Callback, MyAppObserver {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             stopForeground(STOP_FOREGROUND_REMOVE)
         }
-        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val notificationManager =
+            getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.cancel(ACTIVE_CALL_NOTIFICATION_ID)
     }
 
@@ -436,7 +442,8 @@ class NotificationService : Service(), Handler.Callback, MyAppObserver {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             stopForeground(STOP_FOREGROUND_REMOVE)
         }
-        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val notificationManager =
+            getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
         notificationManager.cancel(SIP_ACTIVE_NOTIFICATION_ID)
 

@@ -13,9 +13,10 @@
     </TextView>
     
 	<TableRow>
-        <TextView android:text="ID">
+        <TextView android:text="Domain">
         </TextView>  
-
+
+
 	    <EditText
 	        android:id="@+id/editTextId"
 	        android:layout_width="match_parent"
@@ -27,24 +28,26 @@
 	    </EditText>
     </TableRow>
 	<TableRow>
-        <TextView android:text="Registrar">
+        <TextView android:visibility="gone" android:text="Registrar">
         </TextView>  
 	    <EditText
 	        android:id="@+id/editTextRegistrar"
 	        android:layout_width="match_parent"
 	        android:layout_height="wrap_content"
 	        android:layout_weight="1"
+			android:visibility="gone"
 	        android:inputType="textUri" >
 	    </EditText>
     </TableRow>
 	<TableRow>
-        <TextView android:text="Proxy">
+        <TextView android:visibility="gone" android:text="Proxy">
         </TextView>  
 	    <EditText
 	        android:id="@+id/editTextProxy"
 	        android:layout_width="match_parent"
 	        android:layout_height="wrap_content"
 	        android:layout_weight="1"
+			android:visibility="gone"
 	        android:inputType="textUri" >
 	    </EditText>
     </TableRow>

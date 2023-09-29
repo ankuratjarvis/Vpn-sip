@@ -171,7 +171,13 @@ class SipActivity : Activity(), ServiceCallback {
 
     private fun initListeners() {
         vpnBtn.setOnClickListener {
-            initiateVpn()
+//            initiateVpn()
+            if(vpnStart){
+                initiateVpn()
+            }else {
+                showVpnConnectDialog()
+
+            }
         }
         startSipStack.setOnClickListener {
             logTextView.text = ""
@@ -199,7 +205,7 @@ class SipActivity : Activity(), ServiceCallback {
 
     }
 
-    private fun initiateVpn() {
+    private fun initiateVpn(username:String?="",password: String?="") {
         if (!netCheck(this)) {
             showToast("check Your internet")
             return
@@ -209,7 +215,7 @@ class SipActivity : Activity(), ServiceCallback {
 
                 confirmDisconnect()
             } else {
-                prepareVpn()
+                prepareVpn(username!!,password!!)
             }
         } else {
             checkPermissions()
@@ -272,21 +278,51 @@ class SipActivity : Activity(), ServiceCallback {
         val etUser = view.findViewById<View>(R.id.editTextUsername) as EditText
         val etPass = view.findViewById<View>(R.id.editTextPassword) as EditText
 
-        etId.setText(Constants.VPN_DOMAIN_ID)
-        etProxy.setText(Constants.VPN_AGENT_DOMAIN)
-        etReg.setText(Constants.VPN_AGENT_DOMAIN)
-        etUser.setText(Constants.VPN_AGENT_USERNAME)
-        etPass.setText(Constants.VPN_AGENT_PASSWORD)
+//        etId.setText(Constants.VPN_AGENT_USERNAME)
+//        etProxy.setText(Constants.VPN_AGENT_DOMAIN)
+//        etReg.setText(Constants.VPN_AGENT_DOMAIN)
+//        etUser.setText(Constants.VPN_AGENT_USERNAME)
+//        etPass.setText(Constants.VPN_AGENT_PASSWORD)
         adb.setCancelable(false)
         adb.setPositiveButton(
             "OK"
         ) { dialog: DialogInterface?, id: Int ->
-            val acc_id = etId.text.toString()
-            val registrar = etReg.text.toString()
-            val proxy = etProxy.text.toString()
+            val acc_id = "sip:${etUser.text}@${etId.text}"
+            val registrar = "sip:${etId.text}"
+            val proxy = "sip:${etId.text}"
             val username = etUser.text.toString()
             val password = etPass.text.toString()
+            Log.d(TAG,"$acc_id $registrar $proxy $username $password")
             dlgAccountSetting(acc_id, proxy, username, password)
+        }
+        adb.setNegativeButton(
+            "Cancel"
+        ) { dialog: DialogInterface, id: Int -> dialog.cancel() }
+        val ad = adb.create()
+        ad.show()
+    }
+
+    fun showVpnConnectDialog(){
+        val li = LayoutInflater.from(this)
+        val view = li.inflate(R.layout.dialog_vpn_setting, null)
+
+        val adb = AlertDialog.Builder(this)
+        adb.setView(view)
+        adb.setTitle("Account Settings")
+        val vpnUsername = view.findViewById<EditText>(R.id.username_vpn_et)
+        val vpnPassword = view.findViewById<EditText>(R.id.password_vpn_et)
+
+
+        adb.setCancelable(false)
+        adb.setPositiveButton(
+            "OK"
+        ) { dialog: DialogInterface?, id: Int ->
+            if(vpnUsername.text.isEmpty() || vpnPassword.text.isEmpty()){
+                showToast("Enter required Fields ")
+
+            }else{
+                initiateVpn(vpnUsername.text.trim().toString(),vpnPassword.text.trim().toString())
+            }
         }
         adb.setNegativeButton(
             "Cancel"
@@ -325,8 +361,8 @@ class SipActivity : Activity(), ServiceCallback {
         }
     }
 
-    private fun startVpn() {
-        server = Server("bangalore.ovpn", Constants.VPN_USERNAME, Constants.VPN_PASSWORD)
+    private fun startVpn(username: String? ="",password: String?="") {
+        server = Server("bangalore.ovpn", username!!, password!!)
         isVpnServiceRunning()
         VpnStatus.initLogCache(cacheDir)
         try {
@@ -426,7 +462,14 @@ class SipActivity : Activity(), ServiceCallback {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (resultCode == RESULT_OK && requestCode == 111) {
+        Log.d(TAG,"on Activity Result")
+
+        if (resultCode == RESULT_OK && requestCode==112) {
+
+            //Permission granted, start the VPN
+            startVpn()
+        }
+        if ( requestCode == 111) {
 
             if (data.data?.path?.endsWith(".ovpn")!!) {
                 fileUri = data.data
@@ -444,12 +487,6 @@ class SipActivity : Activity(), ServiceCallback {
                 showToast("Please load ovpn file only")
             }
             Log.d(TAG, "File Path --->${fileUri}")
-        } else if (resultCode == RESULT_OK) {
-
-            //Permission granted, start the VPN
-            startVpn()
-        } else {
-            showToast("Permission Deny !! ")
         }
     }
 
@@ -465,17 +502,17 @@ class SipActivity : Activity(), ServiceCallback {
     }
 
 
-    private fun prepareVpn() {
+    private fun prepareVpn(username: String,password: String) {
         if (!vpnStart) {
             if (internetStatus) {
 
                 // Checking permission for network monitor
                 val intent = VpnService.prepare(this)
                 if (intent != null) {
-                    startActivityForResult(intent, 1)
+                    startActivityForResult(intent, 112)
                 } else {
                     Log.d(TAG, "Starting VPN--->")
-                    startVpn()
+                    startVpn(username,password)
                 } //have already permission
 
                 // Update confection status
