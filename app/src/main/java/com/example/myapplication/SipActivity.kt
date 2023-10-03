@@ -65,20 +65,17 @@ class SipActivity : Activity(), ServiceCallback ,VpnTerminationCallback{
     private var logTV: TextView? = null
     private var byteInTv: TextView? = null
     private var byteOutTv: TextView? = null
-    private lateinit var filenameTv:TextView
     private lateinit var vpnBtn: Button
     private lateinit var startSipStack: Button
     private lateinit var stopSipStack: Button
     private lateinit var endCall: Button
     lateinit var accDialog: ImageButton
     lateinit var scrollView: ScrollView
-    lateinit var loadVpnFile: ImageView
     private var activeCallView: RelativeLayout? = null
     private var server: Server? = null
     lateinit var logTextView: TextView
     private var foregroundServiceIntent: Intent? = null
     private var storage: Storage? = null
-    private var fileUri: Uri? = null
     private val permissionList =
         arrayListOf(
             Manifest.permission.RECORD_AUDIO,
@@ -132,12 +129,7 @@ class SipActivity : Activity(), ServiceCallback ,VpnTerminationCallback{
 //        storage!!.clearIsCallActive()
         foregroundServiceIntent = Intent(this, NotificationService::class.java)
         setStopAndStartSipDisabled(false)
-        if (storage!!.readFileUri() != null) {
-            fileUri = Uri.parse(storage!!.readFileUri())
-        } else {
-            fileUri = null
-            vpnBtn.isEnabled = false
-        }
+
 
         isVpnServiceRunning()
 
@@ -173,11 +165,9 @@ class SipActivity : Activity(), ServiceCallback ,VpnTerminationCallback{
         stopSipStack = findViewById(R.id.stopSIP)
 
         logTextView = findViewById(R.id.log_Text_View)
-        filenameTv = findViewById(R.id.file_name_tv)
         accDialog = findViewById(R.id.buttonEditBuddy)
         activeCallView = findViewById(R.id.active_call_Container)
         endCall = findViewById(R.id.endCallButton)
-        loadVpnFile = findViewById(R.id.load_vpn_file)
         scrollView = findViewById(R.id.log_container)
 
         logTextView.movementMethod = ScrollingMovementMethod()
@@ -215,9 +205,7 @@ class SipActivity : Activity(), ServiceCallback ,VpnTerminationCallback{
         }
         accDialog.setOnClickListener { dlgAccountSetting() }
 
-        loadVpnFile.setOnClickListener {
-            fileChooser()
-        }
+
 
     }
 
@@ -492,22 +480,7 @@ class SipActivity : Activity(), ServiceCallback ,VpnTerminationCallback{
 
             }
 
-            if (requestCode == 111 && resultCode==RESULT_OK) {
 
-                if (data?.data?.path?.endsWith(".ovpn")!!) {
-                    fileUri = data?.data
-                    vpnBtn.isEnabled = true
-                    filenameTv.text = data.data?.lastPathSegment?.split("/")?.last()
-                    contentResolver.takePersistableUriPermission(
-                        fileUri!!,
-                        Intent.FLAG_GRANT_READ_URI_PERMISSION
-                    )
-
-                } else {
-                    showToast("Please load ovpn file only")
-                }
-                Log.d(TAG, "File Path --->${fileUri}")
-            }
     }
 
     override fun onResume() {
@@ -666,9 +639,7 @@ class SipActivity : Activity(), ServiceCallback ,VpnTerminationCallback{
 
     override fun onDestroy() {
         super.onDestroy()
-        if (vpnStart && fileUri != null) {
-            storage!!.saveData(Constants.FILE_URI, fileUri.toString())
-        }
+
         if (isCallActive) {
             storage!!.saveData(Constants.IS_CALL_ACTIVE, true)
         } else {
