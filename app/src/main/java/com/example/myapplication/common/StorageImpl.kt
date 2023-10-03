@@ -28,6 +28,38 @@ class StorageImpl(val context: Context?):Storage {
 
     }
 
+    override fun saveVpnUser(id: String, pass: String) {
+        editor?.putString(Constants.PREF_VPN_ID_KEY,id)?.apply()
+        editor?.putString(Constants.PREF_VPN_PASS_KEY,pass)?.apply()
+    }
+
+    override fun fetchVpnUser(): Pair<String, String>? {
+      val userId = pref?.getString(Constants.PREF_VPN_ID_KEY,null)
+      val userPass = pref?.getString(Constants.PREF_VPN_PASS_KEY,null)
+        return Pair(userId.toString(),userPass.toString())
+    }
+
+    override fun hasUser(): Boolean? {
+        return (pref?.contains(Constants.PREF_VPN_ID_KEY) == true && pref.contains(Constants.PREF_VPN_PASS_KEY))
+    }
+
+    override fun saveSipCred(domain: String, id: String, pass: String) {
+        editor?.putString(Constants.PREF_DOMAIN_KEY,domain)?.apply()
+        editor?.putString(Constants.PREF_SIP_ID_KEY,id)?.apply()
+        editor?.putString(Constants.PREF_SIP_PASS_KEY,pass)?.apply()
+    }
+
+    override fun hasSipUser(): Boolean {
+        return (pref?.contains(Constants.PREF_SIP_ID_KEY) == true && pref.contains(Constants.PREF_SIP_PASS_KEY) && pref.contains(Constants.PREF_DOMAIN_KEY) )
+    }
+
+    override fun fetchSipUser(): Triple<String, String, String> {
+        val domain = pref?.getString(Constants.PREF_DOMAIN_KEY,null)
+        val sipId = pref?.getString(Constants.PREF_SIP_ID_KEY,null)
+        val sipPass = pref?.getString(Constants.PREF_SIP_PASS_KEY,null)
+        return Triple(domain.toString(),sipId.toString(),sipPass.toString())
+    }
+
     override fun clearIsServiceRunning() {
         editor?.remove(Constants.SERVICE)?.apply()
     }

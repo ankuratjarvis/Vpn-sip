@@ -27,5 +27,13 @@ object Constants {
     const val FILE_URI= "file_uri"
 
 
+    const val PREF_DOMAIN_KEY = "domain"
+    const val PREF_SIP_ID_KEY = "sip_id"
+    const val PREF_SIP_PASS_KEY = "sip_pass"
+
+    const val PREF_VPN_ID_KEY = "user_id"
+    const val PREF_VPN_PASS_KEY = "user_pass"
+
+
 
 }

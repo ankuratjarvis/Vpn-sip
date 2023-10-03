@@ -53,7 +53,7 @@ import java.io.IOException
 import java.io.InputStreamReader
 
 
-class SipActivity : Activity(), ServiceCallback ,VpnTerminationCallback{
+class SipActivity : Activity(), ServiceCallback, VpnTerminationCallback {
     override fun terminateVPN() {
         TODO("Not yet implemented")
     }
@@ -91,8 +91,8 @@ class SipActivity : Activity(), ServiceCallback ,VpnTerminationCallback{
     private val VPN_START_REQUEST_CODE = 112
     private val FILE_REQ_CODE = 111
 
-    private lateinit var vpn_username:String
-    private lateinit var vpn_password:String
+    private lateinit var vpn_username: String
+    private lateinit var vpn_password: String
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         /* if (intent != null) {
@@ -206,7 +206,6 @@ class SipActivity : Activity(), ServiceCallback ,VpnTerminationCallback{
         accDialog.setOnClickListener { dlgAccountSetting() }
 
 
-
     }
 
     private fun initiateVpn(username: String? = "", password: String? = "") {
@@ -281,7 +280,12 @@ class SipActivity : Activity(), ServiceCallback ,VpnTerminationCallback{
         val etProxy = view.findViewById<View>(R.id.editTextProxy) as EditText
         val etUser = view.findViewById<View>(R.id.editTextUsername) as EditText
         val etPass = view.findViewById<View>(R.id.editTextPassword) as EditText
-
+        if(storage!!.hasSipUser()){
+            val sipUser = storage!!.fetchSipUser()
+            etId.setText(sipUser.first)
+            etUser.setText(sipUser.second)
+            etPass.setText(sipUser.third)
+        }
 //        etId.setText(Constants.DOMAIN)
 //        etProxy.setText(Constants.VPN_AGENT_DOMAIN)
 //        etReg.setText(Constants.VPN_AGENT_DOMAIN)
@@ -291,6 +295,8 @@ class SipActivity : Activity(), ServiceCallback ,VpnTerminationCallback{
         adb.setPositiveButton(
             "OK"
         ) { dialog: DialogInterface?, id: Int ->
+            storage!!.saveSipCred(etId.text.trim().toString(),etUser.text.trim().toString(),etPass.text.trim().toString())
+
             val acc_id = "sip:${etUser.text}@${etId.text}"
             val registrar = "sip:${etId.text}"
             val proxy = "sip:${etId.text}"
@@ -315,9 +321,12 @@ class SipActivity : Activity(), ServiceCallback ,VpnTerminationCallback{
         adb.setTitle("Account Settings")
         val vpnUsername = view.findViewById<EditText>(R.id.username_vpn_et)
         val vpnPassword = view.findViewById<EditText>(R.id.password_vpn_et)
+        if( storage?.hasUser()!!){
+            val userCred = storage?.fetchVpnUser()
+            vpnUsername.setText(userCred?.first)
+            vpnPassword.setText(userCred?.second)
+        }
 
-        vpnUsername.setText( Constants.VPN_USERNAME)
-        vpnPassword.setText( Constants.VPN_PASSWORD)
         adb.setCancelable(false)
         adb.setPositiveButton(
             "OK"
@@ -326,9 +335,10 @@ class SipActivity : Activity(), ServiceCallback ,VpnTerminationCallback{
                 showToast("Enter required Fields ")
 
             } else {
-               vpn_username = vpnUsername.text.trim().toString()
+                vpn_username = vpnUsername.text.trim().toString()
                 vpn_password = vpnPassword.text.trim().toString()
-                initiateVpn(vpn_username,vpn_password)
+                storage?.saveVpnUser(vpn_username, vpn_password)
+                initiateVpn(vpn_username, vpn_password)
             }
         }
         adb.setNegativeButton(
@@ -470,15 +480,15 @@ class SipActivity : Activity(), ServiceCallback ,VpnTerminationCallback{
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         Log.d(TAG, "on Activity Result")
-            if ( requestCode==VPN_START_REQUEST_CODE && resultCode==RESULT_OK ) {
-                Log.d(TAG,"Start the vpn permission")
+        if (requestCode == VPN_START_REQUEST_CODE && resultCode == RESULT_OK) {
+            Log.d(TAG, "Start the vpn permission")
 
-                startVpn(vpn_username,vpn_password)
+            startVpn(vpn_username, vpn_password)
 
-            }else{
-                Log.d(TAG,"else block triggered ${data?.data}")
+        } else {
+            Log.d(TAG, "else block triggered ${data?.data}")
 
-            }
+        }
 
 
     }
