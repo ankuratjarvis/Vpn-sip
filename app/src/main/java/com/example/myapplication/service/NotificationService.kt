@@ -13,6 +13,7 @@ import android.os.Binder
 import android.os.Build
 import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.os.Message
 import android.util.Log
 import android.widget.ListView
@@ -206,7 +207,16 @@ class NotificationService : Service(), Handler.Callback, MyAppObserver {
             }
 
             Log.d(TAG, "Call State----> ${ci.state}")
-            if (ci.state == pjsip_inv_state.PJSIP_INV_STATE_DISCONNECTED) {
+            if(ci.state ==pjsip_inv_state.PJSIP_INV_STATE_CONNECTING){
+                Log.d(TAG, "Call State----> ${ci.state}")
+                Log.d(TAG,"********CALLING*******")
+
+            }else if(ci.state==pjsip_inv_state.PJSIP_INV_STATE_CONFIRMED){
+                Log.d(TAG, "Call State----> ${ci.state}")
+                Log.d(TAG,"********CONNECTED*******")
+
+            }
+            else if (ci.state == pjsip_inv_state.PJSIP_INV_STATE_DISCONNECTED) {
                 if (currentCall != null) {
                     currentCall?.delete()
                     currentCall = null
@@ -332,9 +342,10 @@ class NotificationService : Service(), Handler.Callback, MyAppObserver {
 
             val incomingCallNotification: Notification = showCallActiveNotification()
             startForeground(ACTIVE_CALL_NOTIFICATION_ID, incomingCallNotification)
+            Handler().postDelayed({
+                clearActiveCallNotification()
 
-            Thread.sleep(5000L)
-            clearActiveCallNotification()
+            }, 3000L)
         } catch (e: Exception) {
             println(e.message)
         }
@@ -448,6 +459,13 @@ class NotificationService : Service(), Handler.Callback, MyAppObserver {
         notificationManager.cancel(SIP_ACTIVE_NOTIFICATION_ID)
 
     }
+
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        super.onTaskRemoved(rootIntent)
+//            stopSip()
+    }
+
+
 
     inner class LocalBinder : Binder() {
         fun getInstance(): NotificationService {

@@ -1494,4 +1494,11 @@ public class OpenVPNService extends VpnService implements StateListener, Callbac
     public boolean isConnected() {
         return flag;
     }
+
+    @Override
+    public void onTaskRemoved(Intent rootIntent) {
+        super.onTaskRemoved(rootIntent);
+//            openvpnStopped();
+        Log.d("OPENVPN","Task removed kill thes service");
+    }
 }
