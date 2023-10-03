@@ -9,6 +9,9 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.ApplicationInfo
+import android.media.AudioAttributes
+import android.media.AudioManager
+import android.net.Uri
 import android.os.Binder
 import android.os.Build
 import android.os.Handler
@@ -163,12 +166,12 @@ class NotificationService : Service(), Handler.Callback, MyAppObserver {
 
             sipChannel.description = "SIP Notifications"
             callChannel.description = "SIP Call Notifications"
-            /* channel.setSound(
+            callChannel.setSound(
                  Uri.parse("android.resource://" + applicationContext.packageName + "/" + R.raw.ringtone),
                  AudioAttributes.Builder().setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
                      .setLegacyStreamType(AudioManager.STREAM_RING)
                      .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION).build()
-             )*/
+             )
             val channelList = mutableListOf(sipChannel, callChannel)
             Objects.requireNonNull(
                 applicationContext.getSystemService(
@@ -417,7 +420,7 @@ class NotificationService : Service(), Handler.Callback, MyAppObserver {
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setCategory(NotificationCompat.CATEGORY_MESSAGE)
             .setAutoCancel(true)
-//                .setSound(Uri.parse("android.resource://" + applicationContext.packageName + "/" + R.raw.ringtone))
+                .setSound(Uri.parse("android.resource://" + applicationContext.packageName + "/" + R.raw.ringtone))
         return notificationBuilder.build()
     }
 
@@ -435,7 +438,7 @@ class NotificationService : Service(), Handler.Callback, MyAppObserver {
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_CALL)
             .setAutoCancel(true)
-//                .setSound(Uri.parse("android.resource://" + applicationContext.packageName + "/" + R.raw.ringtone))
+                .setSound(Uri.parse("android.resource://" + applicationContext.packageName + "/" + R.raw.ringtone))
             .setFullScreenIntent(pendingIntent, true)
         return notificationBuilder.build()
     }
