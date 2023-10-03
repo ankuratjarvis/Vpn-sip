@@ -388,9 +388,9 @@ class SipActivity : Activity(), ServiceCallback ,VpnTerminationCallback{
             // .ovpn file
 //            val fis = FileInputStream(fileUri)
 
-            val ois = contentResolver.openInputStream(fileUri!!)
-//            val conf = assets.open(server!!.ovpn)
-            val isr = InputStreamReader(ois)
+//            val ois = contentResolver.openInputStream(fileUri!!)
+            val conf = assets.open(server!!.ovpn)
+            val isr = InputStreamReader(conf)
             val br = BufferedReader(isr)
             val config = StringBuilder()
             var line: String?
@@ -407,7 +407,7 @@ class SipActivity : Activity(), ServiceCallback ,VpnTerminationCallback{
             // Update log
 //            logTV.setText("Connecting...");
             vpnStart = true
-            ois?.close()
+//            ois?.close()
         } catch (e: IOException) {
             Log.d(TAG, "Exception---> " + e.message)
         } catch (e: RemoteException) {

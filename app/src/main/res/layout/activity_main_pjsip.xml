@@ -89,29 +89,7 @@
                 android:tag="1"
                 android:text="Connect Vpn"
                 android:textSize="16sp" />
-            <TextView
-                android:id="@+id/file_name_tv"
-                android:layout_alignParentTop="true"
-                android:layout_toStartOf="@+id/load_vpn_file"
-                android:gravity="center"
-                android:textSize="12sp"
-                android:layout_marginTop="20dp"
-                android:layout_marginEnd="12dp"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                />
-            <com.google.android.material.imageview.ShapeableImageView
-                android:id="@+id/load_vpn_file"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:layout_marginEnd="20dp"
 
-                android:layout_below="@+id/connection_status"
-                android:layout_alignParentEnd="true"
-                android:layout_marginTop="16dp"
-                android:contentDescription="upload ovpn file"
-                app:srcCompat="@android:drawable/ic_menu_upload" />
 
 
             <LinearLayout
