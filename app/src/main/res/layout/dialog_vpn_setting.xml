@@ -29,6 +29,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="password"
+        app:endIconMode="password_toggle"
         android:layout_marginVertical="10dp"
         app:layout_constraintTop_toBottomOf="@+id/username_vpn_tv"
         app:layout_constraintStart_toStartOf="parent"
@@ -36,6 +37,7 @@
         >
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/password_vpn_et"
+            android:inputType="textPassword"
 
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

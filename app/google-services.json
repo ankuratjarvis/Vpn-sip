@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "50208807905",
+    "project_id": "jarvis-vpn-sip",
+    "storage_bucket": "jarvis-vpn-sip.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:50208807905:android:ab0c45a0de777af5fe90a0",
+        "android_client_info": {
+          "package_name": "com.example.myapplication"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCtHAg8UOzQ4abOiqFdoNV8KDZ61WVbBbQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

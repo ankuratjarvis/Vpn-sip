@@ -167,11 +167,11 @@ class NotificationService : Service(), Handler.Callback, MyAppObserver {
             sipChannel.description = "SIP Notifications"
             callChannel.description = "SIP Call Notifications"
             callChannel.setSound(
-                 Uri.parse("android.resource://" + applicationContext.packageName + "/" + R.raw.ringtone),
-                 AudioAttributes.Builder().setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                     .setLegacyStreamType(AudioManager.STREAM_RING)
-                     .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION).build()
-             )
+                Uri.parse("android.resource://" + applicationContext.packageName + "/" + R.raw.ringtone),
+                AudioAttributes.Builder().setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .setLegacyStreamType(AudioManager.STREAM_RING)
+                    .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION).build()
+            )
             val channelList = mutableListOf(sipChannel, callChannel)
             Objects.requireNonNull(
                 applicationContext.getSystemService(
@@ -210,16 +210,15 @@ class NotificationService : Service(), Handler.Callback, MyAppObserver {
             }
 
             Log.d(TAG, "Call State----> ${ci.state}")
-            if(ci.state ==pjsip_inv_state.PJSIP_INV_STATE_CONNECTING){
+            if (ci.state == pjsip_inv_state.PJSIP_INV_STATE_CONNECTING) {
                 Log.d(TAG, "Call State----> ${ci.state}")
-                Log.d(TAG,"********CALLING*******")
+                Log.d(TAG, "********CALLING*******")
 
-            }else if(ci.state==pjsip_inv_state.PJSIP_INV_STATE_CONFIRMED){
+            } else if (ci.state == pjsip_inv_state.PJSIP_INV_STATE_CONFIRMED) {
                 Log.d(TAG, "Call State----> ${ci.state}")
-                Log.d(TAG,"********CONNECTED*******")
+                Log.d(TAG, "********CONNECTED*******")
 
-            }
-            else if (ci.state == pjsip_inv_state.PJSIP_INV_STATE_DISCONNECTED) {
+            } else if (ci.state == pjsip_inv_state.PJSIP_INV_STATE_DISCONNECTED) {
                 if (currentCall != null) {
                     currentCall?.delete()
                     currentCall = null
@@ -420,7 +419,7 @@ class NotificationService : Service(), Handler.Callback, MyAppObserver {
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setCategory(NotificationCompat.CATEGORY_MESSAGE)
             .setAutoCancel(true)
-                .setSound(Uri.parse("android.resource://" + applicationContext.packageName + "/" + R.raw.ringtone))
+            .setSound(Uri.parse("android.resource://" + applicationContext.packageName + "/" + R.raw.ringtone))
         return notificationBuilder.build()
     }
 
@@ -438,7 +437,7 @@ class NotificationService : Service(), Handler.Callback, MyAppObserver {
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_CALL)
             .setAutoCancel(true)
-                .setSound(Uri.parse("android.resource://" + applicationContext.packageName + "/" + R.raw.ringtone))
+            .setSound(Uri.parse("android.resource://" + applicationContext.packageName + "/" + R.raw.ringtone))
             .setFullScreenIntent(pendingIntent, true)
         return notificationBuilder.build()
     }
@@ -465,9 +464,10 @@ class NotificationService : Service(), Handler.Callback, MyAppObserver {
 
     override fun onTaskRemoved(rootIntent: Intent?) {
         super.onTaskRemoved(rootIntent)
+        if (serviceCallback != null)
+            serviceCallback?.processKilled()
 //            stopSip()
     }
-
 
 
     inner class LocalBinder : Binder() {

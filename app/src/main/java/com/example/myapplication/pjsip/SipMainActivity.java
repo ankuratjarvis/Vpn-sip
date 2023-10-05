@@ -356,8 +356,8 @@ public class SipMainActivity extends Activity
         View view = li.inflate(com.example.myapplication.R.layout.dlg_account_config, null);
 
         if (lastRegStatus.length()!=0) {
-            TextView tvInfo = (TextView)view.findViewById(com.example.myapplication.R.id.textViewInfo);
-            tvInfo.setText("Last status: " + lastRegStatus);
+//            TextView tvInfo = (TextView)view.findViewById(com.example.myapplication.R.id.textViewInfo);
+//            tvInfo.setText("Last status: " + lastRegStatus);
         }
 
         AlertDialog.Builder adb = new AlertDialog.Builder(this);
@@ -365,18 +365,18 @@ public class SipMainActivity extends Activity
         adb.setTitle("Account Settings");
 
         final EditText etId    = (EditText)view.findViewById(com.example.myapplication.R.id.editTextId);
-        final EditText etReg   = (EditText)view.findViewById(com.example.myapplication.R.id.editTextRegistrar);
-        final EditText etProxy = (EditText)view.findViewById(com.example.myapplication.R.id.editTextProxy);
+//        final EditText etReg   = (EditText)view.findViewById(com.example.myapplication.R.id.editTextRegistrar);
+//        final EditText etProxy = (EditText)view.findViewById(com.example.myapplication.R.id.editTextProxy);
         final EditText etUser  = (EditText)view.findViewById(com.example.myapplication.R.id.editTextUsername);
         final EditText etPass  = (EditText)view.findViewById(com.example.myapplication.R.id.editTextPassword);
 
         etId.   setText(accCfg.getIdUri());
-        etReg.  setText(accCfg.getRegConfig().getRegistrarUri());
+//        etReg.  setText(accCfg.getRegConfig().getRegistrarUri());
         StringVector proxies = accCfg.getSipConfig().getProxies();
-        if (proxies.size() > 0)
-            etProxy.setText(proxies.get(0));
-        else
-            etProxy.setText("");
+//        if (proxies.size() > 0)
+//            etProxy.setText(proxies.get(0));
+//        else
+//            etProxy.setText("");
         AuthCredInfoVector creds = accCfg.getSipConfig().getAuthCreds();
         if (creds.size() > 0) {
             etUser. setText(creds.get(0).getUsername());
@@ -393,13 +393,13 @@ public class SipMainActivity extends Activity
                     public void onClick(DialogInterface dialog,int id)
                     {
                         String acc_id        = etId.getText().toString();
-                        String registrar = etReg.getText().toString();
-                        String proxy         = etProxy.getText().toString();
+//                        String registrar = etReg.getText().toString();
+//                        String proxy         = etProxy.getText().toString();
                         String username  = etUser.getText().toString();
                         String password  = etPass.getText().toString();
 
                         accCfg.setIdUri(acc_id);
-                        accCfg.getRegConfig().setRegistrarUri(registrar);
+//                        accCfg.getRegConfig().setRegistrarUri(registrar);
                         AuthCredInfoVector creds = accCfg.getSipConfig().
                                 getAuthCreds();
                         creds.clear();
@@ -409,9 +409,9 @@ public class SipMainActivity extends Activity
                         }
                         StringVector proxies = accCfg.getSipConfig().getProxies();
                         proxies.clear();
-                        if (proxy.length() != 0) {
+                       /* if (proxy.length() != 0) {
                             proxies.add(proxy);
-                        }
+                        }*/
 
                         /* Enable ICE */
                         accCfg.getNatConfig().setIceEnabled(true);

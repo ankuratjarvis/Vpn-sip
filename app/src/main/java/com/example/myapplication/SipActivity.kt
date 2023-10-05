@@ -1,7 +1,7 @@
 package com.example.myapplication
 
 import android.Manifest
-import android.R.attr.data
+import android.R.id
 import android.app.Activity
 import android.app.AlertDialog
 import android.content.BroadcastReceiver
@@ -11,8 +11,9 @@ import android.content.DialogInterface
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.ServiceConnection
-import android.net.Uri
+import android.content.pm.PackageManager
 import android.net.VpnService
+import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
 import android.os.RemoteException
@@ -23,12 +24,15 @@ import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
-import android.widget.ImageView
 import android.widget.RelativeLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import com.example.myapplication.analytics.AnalyticsEvent
+import com.example.myapplication.analytics.AnalyticsParam
+import com.example.myapplication.analytics.impl.AnalyticsImpl
 import com.example.myapplication.common.Constants
 import com.example.myapplication.common.Storage
 import com.example.myapplication.common.StorageImpl
@@ -39,12 +43,18 @@ import com.example.myapplication.utils.MyAccount
 import com.example.myapplication.utils.MyCall
 import com.example.myapplication.utils.ServiceCallback
 import com.example.myapplication.utils.VpnTerminationCallback
+import com.google.firebase.FirebaseApp
+import com.google.firebase.analytics.FirebaseAnalytics
+import com.google.firebase.analytics.ktx.analytics
+import com.google.firebase.analytics.ktx.logEvent
+import com.google.firebase.ktx.Firebase
 import com.karumi.dexter.Dexter
 import com.karumi.dexter.MultiplePermissionsReport
 import com.karumi.dexter.PermissionToken
 import com.karumi.dexter.listener.PermissionRequest
 import com.karumi.dexter.listener.multi.MultiplePermissionsListener
 import de.blinkt.openvpn.OpenVpnApi
+import de.blinkt.openvpn.OpenVpnServiceCallback
 import de.blinkt.openvpn.core.OpenVPNService
 import de.blinkt.openvpn.core.OpenVPNThread
 import de.blinkt.openvpn.core.VpnStatus
@@ -53,7 +63,8 @@ import java.io.IOException
 import java.io.InputStreamReader
 
 
-class SipActivity : Activity(), ServiceCallback, VpnTerminationCallback {
+class SipActivity : Activity(), ServiceCallback, VpnTerminationCallback ,OpenVpnServiceCallback{
+
     override fun terminateVPN() {
         TODO("Not yet implemented")
     }
@@ -77,10 +88,17 @@ class SipActivity : Activity(), ServiceCallback, VpnTerminationCallback {
     private var foregroundServiceIntent: Intent? = null
     private var storage: Storage? = null
     private val permissionList =
-        arrayListOf(
-            Manifest.permission.RECORD_AUDIO,
-            Manifest.permission.READ_EXTERNAL_STORAGE/*,Manifest.permission.BIND_VPN_SERVICE,Manifest.permission.CALL_PHONE*/
-        )
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            arrayListOf(
+                Manifest.permission.RECORD_AUDIO,
+                Manifest.permission.READ_MEDIA_IMAGES/*,Manifest.permission.BIND_VPN_SERVICE,Manifest.permission.CALL_PHONE*/
+            )
+        } else {
+            arrayListOf(
+                Manifest.permission.RECORD_AUDIO,
+                Manifest.permission.READ_EXTERNAL_STORAGE/*,Manifest.permission.BIND_VPN_SERVICE,Manifest.permission.CALL_PHONE*/
+            )
+        }
 
 
     private var isServiceRunning: Boolean = false
@@ -90,18 +108,11 @@ class SipActivity : Activity(), ServiceCallback, VpnTerminationCallback {
 
     private val VPN_START_REQUEST_CODE = 112
     private val FILE_REQ_CODE = 111
+    private val PERMISSION_REQUEST_CODE = 113
 
     private lateinit var vpn_username: String
     private lateinit var vpn_password: String
-    override fun onNewIntent(intent: Intent) {
-        super.onNewIntent(intent)
-        /* if (intent != null) {
-            stopService(foregroundServiceIntent);
-            String data = intent.getStringExtra(Constants.INCOMING_CALL);
-            Log.d(TAG, "On New Intent---->" + data);
-
-        }*/
-    }
+    private lateinit var analyticsImpl: AnalyticsImpl
 
     companion object {
         lateinit var instance: SipActivity
@@ -119,18 +130,19 @@ class SipActivity : Activity(), ServiceCallback, VpnTerminationCallback {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main_pjsip)
-        checkPermissions()
-
         instance = this
-
+        analyticsImpl = AnalyticsImpl(this)
+//        analyticsImpl.trackEvent(AnalyticsEvent.APP_ACTIVE,AnalyticsParam.APP_ACTIVE_TRUE)
         initViews()
         storage = StorageImpl(this)
-//        storage!!.clearIsServiceRunning()
-//        storage!!.clearIsCallActive()
+
+//        storage!!.delete("permission")
+        checkPermissions()
+
         foregroundServiceIntent = Intent(this, NotificationService::class.java)
         setStopAndStartSipDisabled(false)
 
-
+        OpenVPNService.registerListener(this)
         isVpnServiceRunning()
 
         if (java.lang.Boolean.TRUE == storage!!.readData(Constants.SERVICE)) {
@@ -179,8 +191,10 @@ class SipActivity : Activity(), ServiceCallback, VpnTerminationCallback {
         vpnBtn.setOnClickListener {
 //            initiateVpn()
             if (vpnStart) {
+
                 initiateVpn()
             } else {
+
                 showVpnConnectDialog()
 
             }
@@ -192,6 +206,7 @@ class SipActivity : Activity(), ServiceCallback, VpnTerminationCallback {
         stopSipStack.setOnClickListener {
             if (isServiceRunning) {
                 myService!!.stopSip()
+                analyticsImpl.trackEvent(AnalyticsEvent.SIP_STOP, AnalyticsParam.CLICK)
                 isServiceRunning = false
                 setStopAndStartSipDisabled(false)
             } else {
@@ -211,6 +226,7 @@ class SipActivity : Activity(), ServiceCallback, VpnTerminationCallback {
     private fun initiateVpn(username: String? = "", password: String? = "") {
         if (!netCheck(this)) {
             showToast("check Your internet")
+            analyticsImpl.trackEvent(AnalyticsEvent.ERROR, AnalyticsParam.NO_INTERNET)
             return
         }
         if (storage?.readData("permission")!!) {
@@ -251,6 +267,7 @@ class SipActivity : Activity(), ServiceCallback, VpnTerminationCallback {
         username: String?,
         password: String?
     ) {
+
         foregroundServiceIntent = Intent(this, NotificationService::class.java)
         val bundle = Bundle()
         bundle.putString("domain_id", id)
@@ -269,18 +286,18 @@ class SipActivity : Activity(), ServiceCallback, VpnTerminationCallback {
         val li = LayoutInflater.from(this)
         val view = li.inflate(R.layout.dlg_account_config, null)
         if (lastRegStatus.length != 0) {
-            val tvInfo = view.findViewById<View>(R.id.textViewInfo) as TextView
-            tvInfo.text = "Last status: $lastRegStatus"
+//            val tvInfo = view.findViewById<View>(R.id.textViewInfo) as TextView
+//            tvInfo.text = "Last status: $lastRegStatus"
         }
         val adb = AlertDialog.Builder(this)
         adb.setView(view)
         adb.setTitle("Account Settings")
         val etId = view.findViewById<View>(R.id.editTextId) as EditText
-        val etReg = view.findViewById<View>(R.id.editTextRegistrar) as EditText
-        val etProxy = view.findViewById<View>(R.id.editTextProxy) as EditText
+//        val etReg = view.findViewById<View>(R.id.editTextRegistrar) as EditText
+//        val etProxy = view.findViewById<View>(R.id.editTextProxy) as EditText
         val etUser = view.findViewById<View>(R.id.editTextUsername) as EditText
         val etPass = view.findViewById<View>(R.id.editTextPassword) as EditText
-        if(storage!!.hasSipUser()){
+        if (storage!!.hasSipUser()) {
             val sipUser = storage!!.fetchSipUser()
             etId.setText(sipUser.first)
             etUser.setText(sipUser.second)
@@ -295,7 +312,19 @@ class SipActivity : Activity(), ServiceCallback, VpnTerminationCallback {
         adb.setPositiveButton(
             "OK"
         ) { dialog: DialogInterface?, id: Int ->
-            storage!!.saveSipCred(etId.text.trim().toString(),etUser.text.trim().toString(),etPass.text.trim().toString())
+
+            analyticsImpl.trackEvent(
+                AnalyticsEvent.SIP_START,
+                hashMapOf(
+                    AnalyticsParam.USER_SIP_DOMAIN to etId.text.trim().toString(),
+                    AnalyticsParam.USER_SIP_ID to etUser.text.trim().toString()
+                )
+            )
+            storage!!.saveSipCred(
+                etId.text.trim().toString(),
+                etUser.text.trim().toString(),
+                etPass.text.trim().toString()
+            )
 
             val acc_id = "sip:${etUser.text}@${etId.text}"
             val registrar = "sip:${etId.text}"
@@ -321,7 +350,7 @@ class SipActivity : Activity(), ServiceCallback, VpnTerminationCallback {
         adb.setTitle("Account Settings")
         val vpnUsername = view.findViewById<EditText>(R.id.username_vpn_et)
         val vpnPassword = view.findViewById<EditText>(R.id.password_vpn_et)
-        if( storage?.hasUser()!!){
+        if (storage?.hasUser()!!) {
             val userCred = storage?.fetchVpnUser()
             vpnUsername.setText(userCred?.first)
             vpnPassword.setText(userCred?.second)
@@ -356,6 +385,12 @@ class SipActivity : Activity(), ServiceCallback, VpnTerminationCallback {
         if (connectionState != null) when (connectionState) {
             "DISCONNECTED" -> {
                 status("connect")
+                if (::vpn_username.isInitialized)
+                    analyticsImpl.trackEvent(
+                        AnalyticsEvent.VPN_DISCONNECTED,
+                        hashMapOf(AnalyticsParam.USER_VPN_ID to vpn_username)
+                    )
+
                 vpnStart = false
                 OpenVPNService.setDefaultStatus()
                 logTV!!.text = ""
@@ -364,6 +399,11 @@ class SipActivity : Activity(), ServiceCallback, VpnTerminationCallback {
             "CONNECTED" -> {
                 vpnStart = true // it will use after restart this activity
                 status("connected")
+                if (::vpn_username.isInitialized)
+                    analyticsImpl.trackEvent(
+                        AnalyticsEvent.VPN_CONNECTED,
+                        hashMapOf(AnalyticsParam.USER_VPN_ID to vpn_username)
+                    )
                 logTV!!.text = ""
             }
 
@@ -382,6 +422,7 @@ class SipActivity : Activity(), ServiceCallback, VpnTerminationCallback {
         server = Server("bangalore.ovpn", username, password)
         isVpnServiceRunning()
         VpnStatus.initLogCache(cacheDir)
+        analyticsImpl.trackEvent(AnalyticsEvent.VPN_START, AnalyticsParam.CLICK)
         try {
             // .ovpn file
 //            val fis = FileInputStream(fileUri)
@@ -556,8 +597,59 @@ class SipActivity : Activity(), ServiceCallback, VpnTerminationCallback {
     }
 
     private fun checkPermissions() {
-        Dexter.withContext(this).withPermissions(permissionList).withListener(permissionListener)
+        Dexter.withContext(this).withPermissions(permissionList).withListener(object :
+            MultiplePermissionsListener {
+            override fun onPermissionsChecked(p0: MultiplePermissionsReport?) {
+                val isGranted = p0?.areAllPermissionsGranted() ?: false
+                if (isGranted)
+                    storage!!.saveData("permission", true)
+            }
+
+            override fun onPermissionRationaleShouldBeShown(
+                p0: MutableList<PermissionRequest>?,
+                p1: PermissionToken?
+            ) {
+                p1?.continuePermissionRequest()
+            }
+
+
+        })
             .check()
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+//
+//            if(!checkRecordAudioPermission()){
+//                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+//                    requestPermissions(
+//                        arrayOf(
+//                            Manifest.permission.RECORD_AUDIO,
+//                            Manifest.permission.READ_MEDIA_IMAGES
+//                        ), PERMISSION_REQUEST_CODE
+//                    )
+//                }
+//            }
+//            if (!checkRecordAudioPermission() || !checkReadMediaStoragePermission()) {
+//                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+//                    requestPermissions(
+//                        arrayOf(
+//                            Manifest.permission.RECORD_AUDIO,
+//                            Manifest.permission.READ_MEDIA_IMAGES
+//                        ), PERMISSION_REQUEST_CODE
+//                    )
+//                } else {
+//
+//                    requestPermissions(
+//                        arrayOf(
+//                            Manifest.permission.RECORD_AUDIO,
+//                            Manifest.permission.READ_EXTERNAL_STORAGE
+//                        ), PERMISSION_REQUEST_CODE
+//                    )
+//                }
+//
+//            } else {
+//            }
+//        }
+
+
     }
 
     private fun confirmDisconnect() {
@@ -582,32 +674,26 @@ class SipActivity : Activity(), ServiceCallback, VpnTerminationCallback {
         startSipStack.isEnabled = !flag
     }
 
-    private val permissionListener = object : MultiplePermissionsListener {
-        override fun onPermissionsChecked(p0: MultiplePermissionsReport?) {
-            val isGranted = p0?.areAllPermissionsGranted() ?: false
-            if (isGranted) {
-                storage?.saveData("permission", true)
-            }
-        }
-
-        override fun onPermissionRationaleShouldBeShown(
-            p0: MutableList<PermissionRequest>?,
-            p1: PermissionToken?
-        ) {
-            p1?.continuePermissionRequest()
-        }
-
-
-    }
 
     override fun onAnswer(isActive: Boolean) {
         Log.d(TAG, "OnAnswered Triggered")
         if (isActive) {
             isCallActive = true
+            analyticsImpl.trackEvent(
+                AnalyticsEvent.INCOMING_CALL,
+                AnalyticsParam.CALL_BRIDGING,
+                "call bridging initiated"
+            )
             activeCallView!!.visibility = View.VISIBLE
             logTextView.visibility = View.GONE
         } else {
             isCallActive = false
+            analyticsImpl.trackEvent(
+                AnalyticsEvent.CALL_ENDED,
+                AnalyticsParam.CALL_BRIDGING,
+                "call bridging destroyed"
+            )
+
             activeCallView!!.visibility = View.GONE
             logTextView.visibility = View.VISIBLE
         }
@@ -620,6 +706,24 @@ class SipActivity : Activity(), ServiceCallback, VpnTerminationCallback {
         isCallActive = false
         logTextView.text = " "
         stopService(foregroundServiceIntent)
+    }
+
+    override fun processKilled() {
+        stopVpn()
+//        stopService()
+//        unbindService(serviceConnection)
+        storage!!.clearIsCallActive()
+        storage!!.clearIsServiceRunning()
+        analyticsImpl.trackEvent(AnalyticsEvent.APP_NOT_ACTIVE, AnalyticsParam.PROCESS_KILLED)
+    }
+    override fun onProcessKilled() {
+        Log.d(TAG,"Process Killed")
+        stopVpn()
+//        stopService()
+//        unbindService(serviceConnection)
+        storage!!.clearIsCallActive()
+        storage!!.clearIsServiceRunning()
+        analyticsImpl.trackEvent(AnalyticsEvent.APP_NOT_ACTIVE, AnalyticsParam.PROCESS_KILLED)
     }
 
 
@@ -647,9 +751,48 @@ class SipActivity : Activity(), ServiceCallback, VpnTerminationCallback {
         startActivityForResult(intent, FILE_REQ_CODE)
     }
 
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        when (requestCode) {
+            PERMISSION_REQUEST_CODE -> {
+                if (grantResults[0] == PackageManager.PERMISSION_GRANTED && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
+                    storage!!.saveData("permission", true)
+                } else {
+                    Log.d(TAG, "checking permission")
+//                    checkPermissions()
+                }
+            }
+        }
+    }
+
+    private fun checkRecordAudioPermission(): Boolean {
+        return ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.RECORD_AUDIO
+        ) != PackageManager.PERMISSION_GRANTED
+    }
+
+    private fun checkReadMediaStoragePermission(): Boolean {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            return ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.READ_MEDIA_IMAGES
+            ) != PackageManager.PERMISSION_GRANTED
+        }
+
+        return ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.READ_EXTERNAL_STORAGE
+        ) != PackageManager.PERMISSION_GRANTED
+    }
+
     override fun onDestroy() {
         super.onDestroy()
-
+        isVpnServiceRunning()
         if (isCallActive) {
             storage!!.saveData(Constants.IS_CALL_ACTIVE, true)
         } else {

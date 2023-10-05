@@ -58,6 +58,7 @@ import java.util.Vector;
 
 import de.blinkt.openvpn.DisconnectVPNActivity;
 import de.blinkt.openvpn.LaunchVPN;
+import de.blinkt.openvpn.OpenVpnServiceCallback;
 import de.blinkt.openvpn.R;
 import de.blinkt.openvpn.VpnProfile;
 import de.blinkt.openvpn.api.ExternalAppDatabase;
@@ -111,6 +112,8 @@ public class OpenVPNService extends VpnService implements StateListener, Callbac
     private boolean mStarting = false;
     private long mConnecttime;
     private OpenVPNManagement mManagement;
+    private static OpenVpnServiceCallback callback;
+
     /*private final IBinder mBinder = new IOpenVPNServiceInternal.Stub() {
 
         @Override
@@ -1495,10 +1498,16 @@ public class OpenVPNService extends VpnService implements StateListener, Callbac
         return flag;
     }
 
+    public static void registerListener(OpenVpnServiceCallback listener){
+        callback = listener;
+    }
     @Override
     public void onTaskRemoved(Intent rootIntent) {
         super.onTaskRemoved(rootIntent);
-//            openvpnStopped();
+
+            openvpnStopped();
+            callback.onProcessKilled();
         Log.d("OPENVPN","Task removed kill thes service");
     }
+
 }

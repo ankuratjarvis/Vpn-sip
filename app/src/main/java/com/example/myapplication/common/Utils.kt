@@ -13,6 +13,8 @@ import androidx.fragment.app.add
 import androidx.fragment.app.commit
 import com.example.myapplication.MainActivity
 import com.example.myapplication.R
+import com.google.firebase.analytics.FirebaseAnalytics
+import com.google.firebase.analytics.FirebaseAnalytics.Event
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.TimeZone
@@ -59,6 +61,7 @@ fun isAppInForeground(context: Context): Boolean {
     }
     return false
 }
+
 
 
 
