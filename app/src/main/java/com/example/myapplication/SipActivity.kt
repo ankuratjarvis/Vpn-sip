@@ -209,10 +209,7 @@ class SipActivity : Activity(), ServiceCallback {
         }
         endCall.setOnClickListener {
             if (myService != null) {
-                isMicActive=true
-                isSpeakerActive=false
-                speakerBtn.setImageDrawable(ResourcesCompat.getDrawable(applicationContext.resources,R.drawable.ic_speaker_inactive,null))
-                micButn.setImageDrawable(ResourcesCompat.getDrawable(applicationContext.resources,R.drawable.ic_mic_mute,null))
+
                 myService!!.hangupCall()
             }
         }
@@ -708,6 +705,7 @@ class SipActivity : Activity(), ServiceCallback {
             activeCallView!!.visibility = View.VISIBLE
 //            logTextView.visibility = View.GONE
         } else {
+
             isCallActive = false
             analyticsImpl.trackEvent(
                 AnalyticsEvent.CALL_ENDED,
@@ -716,6 +714,10 @@ class SipActivity : Activity(), ServiceCallback {
             )
 
             activeCallView!!.visibility = View.GONE
+            isMicActive=true
+            isSpeakerActive=false
+            speakerBtn.setImageDrawable(ResourcesCompat.getDrawable(applicationContext.resources,R.drawable.ic_speaker_inactive,null))
+            micButn.setImageDrawable(ResourcesCompat.getDrawable(applicationContext.resources,R.drawable.ic_mic_mute,null))
 //            logTextView.visibility = View.VISIBLE
         }
 //        activeCallView!!.visibility = View.VISIBLE
