@@ -1,7 +1,6 @@
 package com.example.myapplication
 
 import android.Manifest
-import android.R.id
 import android.app.Activity
 import android.app.AlertDialog
 import android.content.BroadcastReceiver
@@ -17,7 +16,6 @@ import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
 import android.os.RemoteException
-import android.text.method.ScrollingMovementMethod
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -29,6 +27,7 @@ import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.ContextCompat
+import androidx.core.content.res.ResourcesCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.example.myapplication.analytics.AnalyticsEvent
 import com.example.myapplication.analytics.AnalyticsParam
@@ -43,18 +42,12 @@ import com.example.myapplication.utils.MyAccount
 import com.example.myapplication.utils.MyCall
 import com.example.myapplication.utils.ServiceCallback
 import com.example.myapplication.utils.VpnTerminationCallback
-import com.google.firebase.FirebaseApp
-import com.google.firebase.analytics.FirebaseAnalytics
-import com.google.firebase.analytics.ktx.analytics
-import com.google.firebase.analytics.ktx.logEvent
-import com.google.firebase.ktx.Firebase
 import com.karumi.dexter.Dexter
 import com.karumi.dexter.MultiplePermissionsReport
 import com.karumi.dexter.PermissionToken
 import com.karumi.dexter.listener.PermissionRequest
 import com.karumi.dexter.listener.multi.MultiplePermissionsListener
 import de.blinkt.openvpn.OpenVpnApi
-import de.blinkt.openvpn.OpenVpnServiceCallback
 import de.blinkt.openvpn.core.OpenVPNService
 import de.blinkt.openvpn.core.OpenVPNThread
 import de.blinkt.openvpn.core.VpnStatus
@@ -63,11 +56,8 @@ import java.io.IOException
 import java.io.InputStreamReader
 
 
-class SipActivity : Activity(), ServiceCallback, VpnTerminationCallback ,OpenVpnServiceCallback{
+class SipActivity : Activity(), ServiceCallback {
 
-    override fun terminateVPN() {
-        TODO("Not yet implemented")
-    }
 
     private var myService: NotificationService? = null
     private val lastRegStatus = ""
@@ -85,8 +75,12 @@ class SipActivity : Activity(), ServiceCallback, VpnTerminationCallback ,OpenVpn
     private var activeCallView: RelativeLayout? = null
     private var server: Server? = null
     lateinit var logTextView: TextView
+    lateinit var micButn : ImageButton
+    lateinit var speakerBtn : ImageButton
     private var foregroundServiceIntent: Intent? = null
     private var storage: Storage? = null
+    private var isMicActive = true
+    private var isSpeakerActive = false
     private val permissionList =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             arrayListOf(
@@ -132,17 +126,14 @@ class SipActivity : Activity(), ServiceCallback, VpnTerminationCallback ,OpenVpn
         setContentView(R.layout.activity_main_pjsip)
         instance = this
         analyticsImpl = AnalyticsImpl(this)
-//        analyticsImpl.trackEvent(AnalyticsEvent.APP_ACTIVE,AnalyticsParam.APP_ACTIVE_TRUE)
         initViews()
         storage = StorageImpl(this)
 
-//        storage!!.delete("permission")
         checkPermissions()
 
         foregroundServiceIntent = Intent(this, NotificationService::class.java)
         setStopAndStartSipDisabled(false)
 
-        OpenVPNService.registerListener(this)
         isVpnServiceRunning()
 
         if (java.lang.Boolean.TRUE == storage!!.readData(Constants.SERVICE)) {
@@ -181,8 +172,11 @@ class SipActivity : Activity(), ServiceCallback, VpnTerminationCallback ,OpenVpn
         activeCallView = findViewById(R.id.active_call_Container)
         endCall = findViewById(R.id.endCallButton)
         scrollView = findViewById(R.id.log_container)
+        micButn = findViewById(R.id.mic_btn_iv)
+        speakerBtn = findViewById(R.id.speaker_btn)
 
-        logTextView.movementMethod = ScrollingMovementMethod()
+        speakerBtn.setImageDrawable(ResourcesCompat.getDrawable(applicationContext.resources,R.drawable.ic_speaker_inactive,null))
+        micButn.setImageDrawable(ResourcesCompat.getDrawable(applicationContext.resources,R.drawable.ic_mic_mute,null))
 
         initListeners()
     }
@@ -215,11 +209,38 @@ class SipActivity : Activity(), ServiceCallback, VpnTerminationCallback ,OpenVpn
         }
         endCall.setOnClickListener {
             if (myService != null) {
+                isMicActive=true
+                isSpeakerActive=false
+                speakerBtn.setImageDrawable(ResourcesCompat.getDrawable(applicationContext.resources,R.drawable.ic_speaker_inactive,null))
+                micButn.setImageDrawable(ResourcesCompat.getDrawable(applicationContext.resources,R.drawable.ic_mic_mute,null))
                 myService!!.hangupCall()
             }
         }
         accDialog.setOnClickListener { dlgAccountSetting() }
+        micButn.setOnClickListener{
+            if(isMicActive){
+                isMicActive =false
+                micButn.setImageDrawable(ResourcesCompat.getDrawable(applicationContext.resources,R.drawable.ic_mic_inactive,null))
+                myService?.muteCall(true)
+            }else{
+                isMicActive =true
+                micButn.setImageDrawable(ResourcesCompat.getDrawable(applicationContext.resources,R.drawable.ic_mic_active,null))
+                myService?.muteCall(false)
 
+            }
+        }
+        speakerBtn.setOnClickListener{
+            if(isSpeakerActive){
+                isSpeakerActive =false
+                speakerBtn.setImageDrawable(ResourcesCompat.getDrawable(applicationContext.resources,R.drawable.ic_speaker_inactive,null))
+                myService?.putCallOnSpeaker(false)
+            }else{
+                isSpeakerActive =true
+                speakerBtn.setImageDrawable(ResourcesCompat.getDrawable(applicationContext.resources,R.drawable.ic_speaker_active,null))
+                myService?.putCallOnSpeaker(true)
+
+            }
+        }
 
     }
 
@@ -685,7 +706,7 @@ class SipActivity : Activity(), ServiceCallback, VpnTerminationCallback ,OpenVpn
                 "call bridging initiated"
             )
             activeCallView!!.visibility = View.VISIBLE
-            logTextView.visibility = View.GONE
+//            logTextView.visibility = View.GONE
         } else {
             isCallActive = false
             analyticsImpl.trackEvent(
@@ -695,8 +716,10 @@ class SipActivity : Activity(), ServiceCallback, VpnTerminationCallback ,OpenVpn
             )
 
             activeCallView!!.visibility = View.GONE
-            logTextView.visibility = View.VISIBLE
+//            logTextView.visibility = View.VISIBLE
         }
+//        activeCallView!!.visibility = View.VISIBLE
+
     }
 
     override fun stopService() {
@@ -709,21 +732,7 @@ class SipActivity : Activity(), ServiceCallback, VpnTerminationCallback ,OpenVpn
     }
 
     override fun processKilled() {
-        stopVpn()
-//        stopService()
-//        unbindService(serviceConnection)
-        storage!!.clearIsCallActive()
-        storage!!.clearIsServiceRunning()
-        analyticsImpl.trackEvent(AnalyticsEvent.APP_NOT_ACTIVE, AnalyticsParam.PROCESS_KILLED)
-    }
-    override fun onProcessKilled() {
-        Log.d(TAG,"Process Killed")
-        stopVpn()
-//        stopService()
-//        unbindService(serviceConnection)
-        storage!!.clearIsCallActive()
-        storage!!.clearIsServiceRunning()
-        analyticsImpl.trackEvent(AnalyticsEvent.APP_NOT_ACTIVE, AnalyticsParam.PROCESS_KILLED)
+        TODO("Not yet implemented")
     }
 
 

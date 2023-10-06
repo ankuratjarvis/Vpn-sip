@@ -16,7 +16,6 @@ import android.os.Binder
 import android.os.Build
 import android.os.Handler
 import android.os.IBinder
-import android.os.Looper
 import android.os.Message
 import android.util.Log
 import android.widget.ListView
@@ -65,7 +64,6 @@ class NotificationService : Service(), Handler.Callback, MyAppObserver {
 
     val SIP_ACTIVE_NOTIFICATION_ID = 101
     val ACTIVE_CALL_NOTIFICATION_ID = 102
-
     private val mBinder = LocalBinder()
 
 
@@ -84,6 +82,7 @@ class NotificationService : Service(), Handler.Callback, MyAppObserver {
     }
 
     private fun initSIP(intent: Intent?) {
+
         val b = intent?.getBundleExtra("data_bundle")
         val id = b?.getString("domain_id")
         val proxy = b?.getString("proxy")
@@ -353,9 +352,18 @@ class NotificationService : Service(), Handler.Callback, MyAppObserver {
         }
     }
 
-    fun muteCall() {
+    fun muteCall(isMute:Boolean) {
+        val audioManager = getSystemService(AUDIO_SERVICE) as AudioManager
 
-        // Mute the call
+        audioManager.mode = AudioManager.MODE_IN_CALL
+        audioManager.isMicrophoneMute = isMute
+
+    }
+    fun putCallOnSpeaker(isSpeaker:Boolean){
+        val audioManager = getSystemService(AUDIO_SERVICE) as AudioManager
+
+        audioManager.mode = AudioManager.MODE_IN_CALL
+        audioManager.isSpeakerphoneOn = isSpeaker
 
     }
 
@@ -462,12 +470,7 @@ class NotificationService : Service(), Handler.Callback, MyAppObserver {
 
     }
 
-    override fun onTaskRemoved(rootIntent: Intent?) {
-        super.onTaskRemoved(rootIntent)
-        if (serviceCallback != null)
-            serviceCallback?.processKilled()
-//            stopSip()
-    }
+
 
 
     inner class LocalBinder : Binder() {
