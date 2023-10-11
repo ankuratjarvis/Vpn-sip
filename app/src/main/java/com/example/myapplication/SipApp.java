@@ -64,6 +64,7 @@ public class SipApp extends pjsua2 {
         /* Create endpoint */
         try {
             ep = new Endpoint();
+
             epConfig = new EpConfig();
             sipTpConfig = new TransportConfig();
             ep.libCreate();

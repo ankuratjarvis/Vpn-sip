@@ -9,6 +9,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.ApplicationInfo
+import android.content.pm.ServiceInfo
 import android.media.AudioAttributes
 import android.media.AudioManager
 import android.net.Uri
@@ -21,6 +22,7 @@ import android.util.Log
 import android.widget.ListView
 import android.widget.SimpleAdapter
 import androidx.core.app.NotificationCompat
+import androidx.core.app.ServiceCompat
 import com.example.myapplication.R
 import com.example.myapplication.SipActivecall
 import com.example.myapplication.SipActivity
@@ -334,32 +336,48 @@ class NotificationService : Service(), Handler.Callback, MyAppObserver {
 
     private fun showCallActivity() {
         Log.d("SERVICE-->", "Incoming call.........")
-        val prm = CallOpParam()
-        prm.statusCode = pjsip_status_code.PJSIP_SC_OK
-        try {
-            currentCall?.answer(prm)
+        Thread {
+            val prm = CallOpParam()
+            prm.statusCode = pjsip_status_code.PJSIP_SC_OK
+            if (!SipApp.ep.libIsThreadRegistered()) {
+                SipApp.ep.libRegisterThread("user_input_thread");
+            }
+            try {
+                currentCall?.answer(prm)
 
-            serviceCallback?.onAnswer(true)
 
-            val incomingCallNotification: Notification = showCallActiveNotification()
-            startForeground(ACTIVE_CALL_NOTIFICATION_ID, incomingCallNotification)
-            Handler().postDelayed({
-                clearActiveCallNotification()
+            } catch (e: Exception) {
+                Log.d(TAG, e.message.toString())
+            }
+        }.start()
+        serviceCallback?.onAnswer(true)
 
-            }, 3000L)
-        } catch (e: Exception) {
-            println(e.message)
-        }
+        val incomingCallNotification: Notification = showCallActiveNotification()
+
+//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+//                ServiceCompat.startForeground(this,ACTIVE_CALL_NOTIFICATION_ID, incomingCallNotification,
+//                    ServiceInfo.FOREGROUND_SERVICE_TYPE_PHONE_CALL)
+//            }else{
+        startForeground(ACTIVE_CALL_NOTIFICATION_ID, incomingCallNotification)
+
+//            }
+        Handler().postDelayed({
+            clearActiveCallNotification()
+
+        }, 3000L)
+
+
     }
 
-    fun muteCall(isMute:Boolean) {
+    fun muteCall(isMute: Boolean) {
         val audioManager = getSystemService(AUDIO_SERVICE) as AudioManager
 
         audioManager.mode = AudioManager.MODE_IN_CALL
         audioManager.isMicrophoneMute = isMute
 
     }
-    fun putCallOnSpeaker(isSpeaker:Boolean){
+
+    fun putCallOnSpeaker(isSpeaker: Boolean) {
         val audioManager = getSystemService(AUDIO_SERVICE) as AudioManager
 
         audioManager.mode = AudioManager.MODE_IN_CALL
@@ -469,8 +487,6 @@ class NotificationService : Service(), Handler.Callback, MyAppObserver {
         notificationManager.cancel(SIP_ACTIVE_NOTIFICATION_ID)
 
     }
-
-
 
 
     inner class LocalBinder : Binder() {

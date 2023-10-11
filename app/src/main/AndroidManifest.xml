@@ -48,10 +48,7 @@
         android:name="android.software.sip.voip"
         android:required="true" />
     <uses-feature
-        android:name="android.software.webview"
-        android:required="false" />
-
-    <uses-permission android:name="android.permission.BROADCAST_CLOSE_SYSTEM_DIALOGS" />
+        android:name="android.permission.BROADCAST_CLOSE_SYSTEM_DIALOGS"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.INTERNET" />
@@ -68,17 +65,21 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.WRITE_SETTINGS" />
     <uses-permission android:name="android.permission.WRITE_CALL_LOG" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.USE_SIP" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_PHONE_CALL"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.MANAGE_OWN_CALLS"/>
+    <uses-feature android:name="android.app.role.DIALER"
+        android:required="true"
+        />
 
 
     <application
@@ -100,6 +101,8 @@
         <activity
             android:name=".SipActivity"
             android:exported="true"
+            android:supportsPictureInPicture="true"
+            android:configChanges="smallestScreenSize"
             android:extractNativeLibs="true"
             android:label="@string/app_name"
             android:launchMode="singleTop"
@@ -126,11 +129,11 @@
             <intent-filter>
                 <action android:name="android.net.VpnService" />
             </intent-filter>
+
         </service>
         <service
             android:name=".service.NotificationService"
-            android:foregroundServiceType="microphone"
-
+            android:exported="false"
             />
     </application>
 

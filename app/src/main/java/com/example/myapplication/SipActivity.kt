@@ -3,6 +3,7 @@ package com.example.myapplication
 import android.Manifest
 import android.app.Activity
 import android.app.AlertDialog
+import android.app.PictureInPictureParams
 import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
@@ -11,12 +12,14 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
+import android.graphics.Rect
 import android.net.VpnService
 import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
 import android.os.RemoteException
 import android.util.Log
+import android.util.Rational
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.Button
@@ -26,8 +29,11 @@ import android.widget.RelativeLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.annotation.RequiresApi
+import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
+import androidx.core.graphics.toRectF
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.example.myapplication.analytics.AnalyticsEvent
 import com.example.myapplication.analytics.AnalyticsParam
@@ -75,8 +81,8 @@ class SipActivity : Activity(), ServiceCallback {
     private var activeCallView: RelativeLayout? = null
     private var server: Server? = null
     lateinit var logTextView: TextView
-    lateinit var micButn : ImageButton
-    lateinit var speakerBtn : ImageButton
+    lateinit var micButn: ImageButton
+    lateinit var speakerBtn: ImageButton
     private var foregroundServiceIntent: Intent? = null
     private var storage: Storage? = null
     private var isMicActive = true
@@ -85,12 +91,15 @@ class SipActivity : Activity(), ServiceCallback {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             arrayListOf(
                 Manifest.permission.RECORD_AUDIO,
-                Manifest.permission.READ_MEDIA_IMAGES/*,Manifest.permission.BIND_VPN_SERVICE,Manifest.permission.CALL_PHONE*/
-            )
+                Manifest.permission.READ_MEDIA_IMAGES,
+                Manifest.permission.POST_NOTIFICATIONS,
+
+                )
         } else {
             arrayListOf(
                 Manifest.permission.RECORD_AUDIO,
                 Manifest.permission.READ_EXTERNAL_STORAGE/*,Manifest.permission.BIND_VPN_SERVICE,Manifest.permission.CALL_PHONE*/
+
             )
         }
 
@@ -117,6 +126,13 @@ class SipActivity : Activity(), ServiceCallback {
 
     }
 
+    private val isPipSupported by lazy{
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)
+        } else {
+            false
+        }
+    }
 
 // Register the receiver with appropriate actions
 
@@ -174,9 +190,21 @@ class SipActivity : Activity(), ServiceCallback {
         scrollView = findViewById(R.id.log_container)
         micButn = findViewById(R.id.mic_btn_iv)
         speakerBtn = findViewById(R.id.speaker_btn)
-
-        speakerBtn.setImageDrawable(ResourcesCompat.getDrawable(applicationContext.resources,R.drawable.ic_speaker_inactive,null))
-        micButn.setImageDrawable(ResourcesCompat.getDrawable(applicationContext.resources,R.drawable.ic_mic_mute,null))
+//            videoBounds = activeCallView?.clipBounds!!
+        speakerBtn.setImageDrawable(
+            ResourcesCompat.getDrawable(
+                applicationContext.resources,
+                R.drawable.ic_speaker_inactive,
+                null
+            )
+        )
+        micButn.setImageDrawable(
+            ResourcesCompat.getDrawable(
+                applicationContext.resources,
+                R.drawable.ic_mic_mute,
+                null
+            )
+        )
 
         initListeners()
     }
@@ -214,26 +242,50 @@ class SipActivity : Activity(), ServiceCallback {
             }
         }
         accDialog.setOnClickListener { dlgAccountSetting() }
-        micButn.setOnClickListener{
-            if(isMicActive){
-                isMicActive =false
-                micButn.setImageDrawable(ResourcesCompat.getDrawable(applicationContext.resources,R.drawable.ic_mic_inactive,null))
+        micButn.setOnClickListener {
+            if (isMicActive) {
+                isMicActive = false
+                micButn.setImageDrawable(
+                    ResourcesCompat.getDrawable(
+                        applicationContext.resources,
+                        R.drawable.ic_mic_inactive,
+                        null
+                    )
+                )
                 myService?.muteCall(true)
-            }else{
-                isMicActive =true
-                micButn.setImageDrawable(ResourcesCompat.getDrawable(applicationContext.resources,R.drawable.ic_mic_active,null))
+            } else {
+                isMicActive = true
+                micButn.setImageDrawable(
+                    ResourcesCompat.getDrawable(
+                        applicationContext.resources,
+                        R.drawable.ic_mic_active,
+                        null
+                    )
+                )
                 myService?.muteCall(false)
 
             }
         }
-        speakerBtn.setOnClickListener{
-            if(isSpeakerActive){
-                isSpeakerActive =false
-                speakerBtn.setImageDrawable(ResourcesCompat.getDrawable(applicationContext.resources,R.drawable.ic_speaker_inactive,null))
+        speakerBtn.setOnClickListener {
+            if (isSpeakerActive) {
+                isSpeakerActive = false
+                speakerBtn.setImageDrawable(
+                    ResourcesCompat.getDrawable(
+                        applicationContext.resources,
+                        R.drawable.ic_speaker_inactive,
+                        null
+                    )
+                )
                 myService?.putCallOnSpeaker(false)
-            }else{
-                isSpeakerActive =true
-                speakerBtn.setImageDrawable(ResourcesCompat.getDrawable(applicationContext.resources,R.drawable.ic_speaker_active,null))
+            } else {
+                isSpeakerActive = true
+                speakerBtn.setImageDrawable(
+                    ResourcesCompat.getDrawable(
+                        applicationContext.resources,
+                        R.drawable.ic_speaker_active,
+                        null
+                    )
+                )
                 myService?.putCallOnSpeaker(true)
 
             }
@@ -268,7 +320,6 @@ class SipActivity : Activity(), ServiceCallback {
             Log.d(TAG, "Invoking Service Callback")
             if (myService != null) {
                 myService!!.registerCallback(this@SipActivity)
-                showToast("Service connected")
                 Log.d(TAG, "Service Callback Registered")
             }
             isServiceBound = true
@@ -714,10 +765,22 @@ class SipActivity : Activity(), ServiceCallback {
             )
 
             activeCallView!!.visibility = View.GONE
-            isMicActive=true
-            isSpeakerActive=false
-            speakerBtn.setImageDrawable(ResourcesCompat.getDrawable(applicationContext.resources,R.drawable.ic_speaker_inactive,null))
-            micButn.setImageDrawable(ResourcesCompat.getDrawable(applicationContext.resources,R.drawable.ic_mic_mute,null))
+            isMicActive = true
+            isSpeakerActive = false
+            speakerBtn.setImageDrawable(
+                ResourcesCompat.getDrawable(
+                    applicationContext.resources,
+                    R.drawable.ic_speaker_inactive,
+                    null
+                )
+            )
+            micButn.setImageDrawable(
+                ResourcesCompat.getDrawable(
+                    applicationContext.resources,
+                    R.drawable.ic_mic_mute,
+                    null
+                )
+            )
 //            logTextView.visibility = View.VISIBLE
         }
 //        activeCallView!!.visibility = View.VISIBLE
@@ -801,6 +864,22 @@ class SipActivity : Activity(), ServiceCallback {
         ) != PackageManager.PERMISSION_GRANTED
     }
 
+    private var videoBounds = Rect()
+    override fun onUserLeaveHint() {
+        super.onUserLeaveHint()
+        if(!isPipSupported){
+            return
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            enterPictureInPictureMode(updatePIP()!!)
+        }
+    }
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun updatePIP() :PictureInPictureParams?{
+            return PictureInPictureParams.Builder()
+                .setSourceRectHint(videoBounds).setAspectRatio(Rational(16,9)).build()
+
+    }
     override fun onDestroy() {
         super.onDestroy()
         isVpnServiceRunning()
@@ -812,6 +891,11 @@ class SipActivity : Activity(), ServiceCallback {
         if (isServiceRunning) {
             storage!!.saveData(Constants.SERVICE, true)
             unbindService(serviceConnection)
+        } else {
+            storage!!.saveData(Constants.SERVICE, false)
+
+
+
         }
         if (!vpnStart && !isCallActive && !isServiceRunning) {
             storage!!.clearIsCallActive()
