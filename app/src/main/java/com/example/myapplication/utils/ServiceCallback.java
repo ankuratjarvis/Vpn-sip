@@ -5,4 +5,5 @@ public interface ServiceCallback {
     void stopService();
 
     void processKilled();
+    void gotoActivity();
 }

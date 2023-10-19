@@ -13,11 +13,13 @@ import android.content.IntentFilter
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.graphics.Rect
+import android.net.Uri
 import android.net.VpnService
 import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
 import android.os.RemoteException
+import android.provider.Settings
 import android.util.Log
 import android.util.Rational
 import android.view.LayoutInflater
@@ -30,10 +32,8 @@ import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.annotation.RequiresApi
-import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
-import androidx.core.graphics.toRectF
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.example.myapplication.analytics.AnalyticsEvent
 import com.example.myapplication.analytics.AnalyticsParam
@@ -47,7 +47,6 @@ import com.example.myapplication.service.NotificationService
 import com.example.myapplication.utils.MyAccount
 import com.example.myapplication.utils.MyCall
 import com.example.myapplication.utils.ServiceCallback
-import com.example.myapplication.utils.VpnTerminationCallback
 import com.karumi.dexter.Dexter
 import com.karumi.dexter.MultiplePermissionsReport
 import com.karumi.dexter.PermissionToken
@@ -93,15 +92,22 @@ class SipActivity : Activity(), ServiceCallback {
                 Manifest.permission.RECORD_AUDIO,
                 Manifest.permission.READ_MEDIA_IMAGES,
                 Manifest.permission.POST_NOTIFICATIONS,
+                Manifest.permission.SYSTEM_ALERT_WINDOW
 
-                )
+            )
         } else {
             arrayListOf(
                 Manifest.permission.RECORD_AUDIO,
-                Manifest.permission.READ_EXTERNAL_STORAGE/*,Manifest.permission.BIND_VPN_SERVICE,Manifest.permission.CALL_PHONE*/
+                Manifest.permission.READ_EXTERNAL_STORAGE/*,Manifest.permission.BIND_VPN_SERVICE,Manifest.permission.CALL_PHONE*/,
+                Manifest.permission.SYSTEM_ALERT_WINDOW
+
 
             )
         }
+
+    override fun gotoActivity() {
+
+    }
 
 
     private var isServiceRunning: Boolean = false
@@ -112,6 +118,7 @@ class SipActivity : Activity(), ServiceCallback {
     private val VPN_START_REQUEST_CODE = 112
     private val FILE_REQ_CODE = 111
     private val PERMISSION_REQUEST_CODE = 113
+    private val OVERLAY_REQUEST_CODE = 114
 
     private lateinit var vpn_username: String
     private lateinit var vpn_password: String
@@ -126,7 +133,7 @@ class SipActivity : Activity(), ServiceCallback {
 
     }
 
-    private val isPipSupported by lazy{
+    private val isPipSupported by lazy {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)
         } else {
@@ -222,8 +229,8 @@ class SipActivity : Activity(), ServiceCallback {
             }
         }
         startSipStack.setOnClickListener {
-            logTextView.text = ""
-            dlgAccountSetting()
+            checkOverlayPermission()
+
         }
         stopSipStack.setOnClickListener {
             if (isServiceRunning) {
@@ -595,7 +602,11 @@ class SipActivity : Activity(), ServiceCallback {
 
             startVpn(vpn_username, vpn_password)
 
-        } else {
+            } else if(requestCode==OVERLAY_REQUEST_CODE && resultCode== RESULT_OK){
+                if(!Settings.canDrawOverlays(this)){
+                    showToast("Permission denied to draw over other apps")
+                }
+            }else {
             Log.d(TAG, "else block triggered ${data?.data}")
 
         }
@@ -608,7 +619,12 @@ class SipActivity : Activity(), ServiceCallback {
 
         LocalBroadcastManager.getInstance(this)
             .registerReceiver(broadcastReceiver, IntentFilter("connectionState"))
+        try {
+            myService?.removeView()
 
+        } catch (e: Exception) {
+            Log.d(TAG, e.message.toString())
+        }
     }
 
     override fun onPause() {
@@ -867,18 +883,32 @@ class SipActivity : Activity(), ServiceCallback {
     private var videoBounds = Rect()
     override fun onUserLeaveHint() {
         super.onUserLeaveHint()
-        if(!isPipSupported){
-            return
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            enterPictureInPictureMode(updatePIP()!!)
-        }
+        /*  if(!isPipSupported){
+              return
+          }
+          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+              enterPictureInPictureMode(updatePIP()!!)
+          }*/
     }
-    @RequiresApi(Build.VERSION_CODES.O)
-    fun updatePIP() :PictureInPictureParams?{
-            return PictureInPictureParams.Builder()
-                .setSourceRectHint(videoBounds).setAspectRatio(Rational(16,9)).build()
 
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun updatePIP(): PictureInPictureParams? {
+        return PictureInPictureParams.Builder()
+            .setSourceRectHint(videoBounds).setAspectRatio(Rational(16, 9)).build()
+
+    }
+
+    private fun checkOverlayPermission(){
+        if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)){
+            val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
+            startActivityForResult(intent,OVERLAY_REQUEST_CODE)
+        }else if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.M && Settings.canDrawOverlays(this)){
+                logTextView.text = ""
+                dlgAccountSetting()
+        }else{
+            logTextView.text = ""
+            dlgAccountSetting()
+        }
     }
     override fun onDestroy() {
         super.onDestroy()
@@ -895,12 +925,19 @@ class SipActivity : Activity(), ServiceCallback {
             storage!!.saveData(Constants.SERVICE, false)
 
 
-
         }
         if (!vpnStart && !isCallActive && !isServiceRunning) {
             storage!!.clearIsCallActive()
             storage!!.clearIsServiceRunning()
 
+        }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            if (isServiceRunning)
+                myService?.floatingWindow()
         }
     }
 

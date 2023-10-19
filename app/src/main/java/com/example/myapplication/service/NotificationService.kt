@@ -10,6 +10,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.ApplicationInfo
 import android.content.pm.ServiceInfo
+import android.graphics.PixelFormat
 import android.media.AudioAttributes
 import android.media.AudioManager
 import android.net.Uri
@@ -19,10 +20,21 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Message
 import android.util.Log
+import android.view.Gravity
+import android.view.LayoutInflater
+import android.view.MotionEvent
+import android.view.View
+import android.view.Window
+import android.view.WindowManager
+import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.ListView
 import android.widget.SimpleAdapter
+import androidx.annotation.RequiresApi
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
+import androidx.core.content.res.ResourcesCompat
 import com.example.myapplication.R
 import com.example.myapplication.SipActivecall
 import com.example.myapplication.SipActivity
@@ -71,10 +83,43 @@ class NotificationService : Service(), Handler.Callback, MyAppObserver {
 
     private var serviceCallback: ServiceCallback? = null
 
+    lateinit var bubble: View
+    lateinit var windowManager: WindowManager
+    lateinit var params: WindowManager.LayoutParams
+
+    var initialX: Int = 0
+    var initialY: Int = 0
+    var initialTouchX: Float = 0.0f
+    var initialTouchY: Float = 0.0f
+
     override fun onBind(p0: Intent?): IBinder? {
         return mBinder
     }
 
+    override fun onCreate() {
+        super.onCreate()
+        bubble = LayoutInflater.from(this).inflate(R.layout.floating_bubble, null)
+        val LAYOUT_FLAG = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+        } else {
+            WindowManager.LayoutParams.TYPE_PHONE
+
+        }
+        params = WindowManager.LayoutParams(
+            WindowManager.LayoutParams.WRAP_CONTENT,
+            WindowManager.LayoutParams.WRAP_CONTENT,
+            LAYOUT_FLAG,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+            PixelFormat.TRANSLUCENT
+        )
+
+
+        params.gravity = (Gravity.LEFT)
+        params.x = 0
+        params.y = 100
+        windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
+
+    }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d(TAG, "Inside on start command")
@@ -115,6 +160,54 @@ class NotificationService : Service(), Handler.Callback, MyAppObserver {
                 accCfg = account?.cfg
             }
             dlgAccountSetting(id!!, proxy!!, username!!, password!!)
+        }
+
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun floatingWindow() {
+
+        Log.d(TAG, "Calling Floating Bubble ")
+        windowManager.addView(bubble, params)
+        val bubbleImage = bubble.findViewById<ImageButton>(R.id.floating_bubble)
+        bubbleImage.setImageDrawable(
+            ResourcesCompat.getDrawable(
+                applicationContext.resources,
+                R.drawable.ic_connection,
+                null
+            )
+        )
+        val container = bubble.findViewById<ConstraintLayout>(R.id.floating_bubble_container)
+        bubbleImage.setOnClickListener {
+            val sipIntent = Intent(this, SipActivity::class.java)
+            sipIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+
+            startActivity(sipIntent)
+        }
+
+        bubbleImage.setOnTouchListener { v, event ->
+
+            when (event.action) {
+                MotionEvent.ACTION_DOWN -> {
+                    initialX = params.x
+                    initialY = params.y
+
+                    initialTouchX = event.rawX
+                    initialTouchY = event.rawY
+
+                    true
+                }
+
+                MotionEvent.ACTION_MOVE -> {
+                    params.x = initialX + (event.rawX  - initialTouchX  ).toInt()
+                    params.y = initialY + (  event.rawY-initialTouchY).toInt()
+
+                    windowManager.updateViewLayout(bubble,params)
+                    true
+                }
+            }
+            false
+
         }
 
     }
@@ -190,6 +283,7 @@ class NotificationService : Service(), Handler.Callback, MyAppObserver {
 
     override fun handleMessage(m: Message): Boolean {
         if (m.what == 0) {
+//            removeView()
             app?.deinit()
             app = null;
 
@@ -493,5 +587,25 @@ class NotificationService : Service(), Handler.Callback, MyAppObserver {
         fun getInstance(): NotificationService {
             return this@NotificationService
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        try {
+            removeView()
+
+        } catch (e: Exception) {
+            Log.d(TAG, e.message.toString())
+        }
+    }
+
+    fun isInitialized(): Boolean {
+        return ::windowManager.isInitialized
+    }
+
+    fun removeView() {
+
+        windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
+        windowManager.removeView(bubble)
     }
 }
