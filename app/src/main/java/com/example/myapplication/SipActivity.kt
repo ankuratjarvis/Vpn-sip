@@ -229,8 +229,8 @@ class SipActivity : Activity(), ServiceCallback {
             }
         }
         startSipStack.setOnClickListener {
-            checkOverlayPermission()
-
+            logTextView.text = ""
+            dlgAccountSetting()
         }
         stopSipStack.setOnClickListener {
             if (isServiceRunning) {
@@ -602,11 +602,7 @@ class SipActivity : Activity(), ServiceCallback {
 
             startVpn(vpn_username, vpn_password)
 
-            } else if(requestCode==OVERLAY_REQUEST_CODE && resultCode== RESULT_OK){
-                if(!Settings.canDrawOverlays(this)){
-                    showToast("Permission denied to draw over other apps")
-                }
-            }else {
+            } else {
             Log.d(TAG, "else block triggered ${data?.data}")
 
         }
@@ -619,12 +615,7 @@ class SipActivity : Activity(), ServiceCallback {
 
         LocalBroadcastManager.getInstance(this)
             .registerReceiver(broadcastReceiver, IntentFilter("connectionState"))
-        try {
-            myService?.removeView()
 
-        } catch (e: Exception) {
-            Log.d(TAG, e.message.toString())
-        }
     }
 
     override fun onPause() {
@@ -883,12 +874,12 @@ class SipActivity : Activity(), ServiceCallback {
     private var videoBounds = Rect()
     override fun onUserLeaveHint() {
         super.onUserLeaveHint()
-        /*  if(!isPipSupported){
+          if(!isPipSupported){
               return
           }
           if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
               enterPictureInPictureMode(updatePIP()!!)
-          }*/
+          }
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -898,18 +889,7 @@ class SipActivity : Activity(), ServiceCallback {
 
     }
 
-    private fun checkOverlayPermission(){
-        if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)){
-            val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
-            startActivityForResult(intent,OVERLAY_REQUEST_CODE)
-        }else if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.M && Settings.canDrawOverlays(this)){
-                logTextView.text = ""
-                dlgAccountSetting()
-        }else{
-            logTextView.text = ""
-            dlgAccountSetting()
-        }
-    }
+
     override fun onDestroy() {
         super.onDestroy()
         isVpnServiceRunning()
@@ -935,10 +915,7 @@ class SipActivity : Activity(), ServiceCallback {
 
     override fun onStop() {
         super.onStop()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            if (isServiceRunning)
-                myService?.floatingWindow()
-        }
+
     }
 
 
